@@ -12,7 +12,7 @@ Tai internetinė aplikacija, kurioje vartotojai galės užsiregistruoti, prisiju
 - JavaScript
 - Vite
 - CSS
-- Supabase (Auth: registracija, prisijungimas, atsijungimas)
+- Supabase (Auth + prisijungusio vartotojo receptų skaitymas)
 - GitHub
 
 ## MVP funkcionalumai
@@ -27,11 +27,12 @@ Jau veikiančios funkcijos:
 - Vartotojo pridėtų receptų ištrynimas – su patvirtinimo langu; pašalinimas iš sąrašo ir `localStorage`.
 - Vartotojo registracija per Supabase Auth (el. paštas ir slaptažodis).
 - Vartotojo prisijungimas ir atsijungimas per Supabase Auth (sesija išlieka perkrovus puslapį).
+- Prisijungusio vartotojo receptų nuskaitymas iš Supabase (`public.recipes`) – rodomi atskirai nuo pavyzdinių ir `localStorage` receptų.
 
 Planuojamos funkcijos:
 
-- Receptų saugojimas Supabase duomenų bazėje.
-- Kiekvienas vartotojas matys tik savo receptus.
+- Receptų kūrimas, redagavimas ir trynimas Supabase duomenų bazėje.
+- Pilnas perėjimas nuo `localStorage` prie Supabase saugojimo.
 
 ## Kaip paleisti projektą
 
@@ -67,4 +68,5 @@ npm run dev
 - Supabase klientas (`@supabase/supabase-js`) paruoštas per `src/lib/supabase.js`.
 - Įgyvendinta vartotojo registracija per Supabase Auth.
 - Įgyvendintas prisijungimas ir atsijungimas per Supabase Auth.
-- Receptų CRUD su Supabase dar neprijungtas (receptai kol kas saugomi `localStorage`).
+- Įgyvendintas prisijungusio vartotojo receptų skaitymas (READ) iš Supabase.
+- Receptų kūrimas, redagavimas ir trynimas vis dar naudoja `localStorage` (Supabase CRUD dar nepilnas).

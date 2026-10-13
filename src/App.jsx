@@ -467,6 +467,87 @@ function serializeIngredients(ingredients) {
     .join('\n')
 }
 
+function mapSupabaseRecipe(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    tag: 'Duomenų bazė',
+    image: row.image_url || RECIPE_IMAGES.default,
+    openable: true,
+    isUserRecipe: false,
+    ingredients: parseIngredientLines(row.ingredients || ''),
+    steps: parseStepLines(row.instructions || ''),
+    source: 'supabase',
+  }
+}
+
+function RecipeCards({ recipes, favorites, onToggleFavorite, onOpen }) {
+  return (
+    <div className="recipe-grid">
+      {recipes.map((recipe, index) => (
+        <article
+          key={recipe.id}
+          className={`recipe-card${recipe.openable ? ' is-openable' : ''}`}
+          style={{ animationDelay: `${index * 80}ms` }}
+          onClick={() => onOpen(recipe)}
+          onKeyDown={(event) => {
+            if (!recipe.openable) return
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              onOpen(recipe)
+            }
+          }}
+          role={recipe.openable ? 'button' : undefined}
+          tabIndex={recipe.openable ? 0 : undefined}
+          aria-label={
+            recipe.openable ? `Atidaryti receptą: ${recipe.title}` : undefined
+          }
+        >
+          <div className="recipe-image">
+            <img src={recipe.image} alt={recipe.title} loading="lazy" />
+            <button
+              type="button"
+              className={`fav-btn ${favorites.has(recipe.id) ? 'is-active' : ''}`}
+              aria-label={
+                favorites.has(recipe.id)
+                  ? 'Pašalinti iš mėgstamų'
+                  : 'Pridėti prie mėgstamų'
+              }
+              onClick={(event) => {
+                event.stopPropagation()
+                onToggleFavorite(recipe.id)
+              }}
+            >
+              <Icon name="heart" />
+            </button>
+          </div>
+          <div className="recipe-body">
+            {recipe.tag && <span className="tag">{recipe.tag}</span>}
+            <h3>{recipe.title}</h3>
+            {(recipe.time || recipe.servings || recipe.rating != null) && (
+              <div className="recipe-meta">
+                {recipe.time && (
+                  <span>
+                    <Icon name="clock" />
+                    {recipe.time}
+                  </span>
+                )}
+                {recipe.servings && (
+                  <span>
+                    <Icon name="user" />
+                    {recipe.servings}
+                  </span>
+                )}
+                {recipe.rating != null && <Stars rating={recipe.rating} />}
+              </div>
+            )}
+          </div>
+        </article>
+      ))}
+    </div>
+  )
+}
+
 function RecipeModal({ recipe, onClose, onEdit, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -1149,7 +1230,16 @@ function App() {
   const [authReady, setAuthReady] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [userRecipes, setUserRecipes] = useState(() => loadUserRecipes())
+  const [supabaseRecipes, setSupabaseRecipes] = useState([])
+  const [supabaseLoading, setSupabaseLoading] = useState(false)
+  const [supabaseError, setSupabaseError] = useState('')
   const [toastMessage, setToastMessage] = useState('')
+
+  const clearSupabaseRecipes = () => {
+    setSupabaseRecipes([])
+    setSupabaseError('')
+    setSupabaseLoading(false)
+  }
 
   const openRegister = () => {
     setMenuOpen(false)
@@ -1194,6 +1284,46 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!user?.id) {
+      clearSupabaseRecipes()
+      return undefined
+    }
+
+    let cancelled = false
+
+    const loadSupabaseRecipes = async () => {
+      setSupabaseLoading(true)
+      setSupabaseError('')
+
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (cancelled) return
+
+      if (error) {
+        setSupabaseRecipes([])
+        setSupabaseError(
+          'Nepavyko įkelti receptų iš duomenų bazės. Bandykite dar kartą.',
+        )
+      } else {
+        setSupabaseRecipes((data || []).map(mapSupabaseRecipe))
+        setSupabaseError('')
+      }
+
+      setSupabaseLoading(false)
+    }
+
+    loadSupabaseRecipes()
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id])
+
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
@@ -1202,6 +1332,7 @@ function App() {
         setToastMessage('Atsijungti nepavyko. Bandykite dar kartą.')
         return
       }
+      clearSupabaseRecipes()
       setMenuOpen(false)
       setToastMessage('Sėkmingai atsijungėte.')
     } catch {
@@ -1262,6 +1393,7 @@ function App() {
   }
 
   const filteredRecipes = filterRecipesByTitle(recipes, query)
+  const filteredSupabaseRecipes = filterRecipesByTitle(supabaseRecipes, query)
 
   return (
     <div className="page">
@@ -1424,73 +1556,65 @@ function App() {
                 Receptų nerasta
               </p>
             ) : (
-              <div className="recipe-grid">
-                {filteredRecipes.map((recipe, index) => (
-                  <article
-                    key={recipe.id}
-                    className={`recipe-card${recipe.openable ? ' is-openable' : ''}`}
-                    style={{ animationDelay: `${index * 80}ms` }}
-                    onClick={() => openRecipe(recipe)}
-                    onKeyDown={(event) => {
-                      if (!recipe.openable) return
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        openRecipe(recipe)
-                      }
-                    }}
-                    role={recipe.openable ? 'button' : undefined}
-                    tabIndex={recipe.openable ? 0 : undefined}
-                    aria-label={
-                      recipe.openable
-                        ? `Atidaryti receptą: ${recipe.title}`
-                        : undefined
-                    }
-                  >
-                    <div className="recipe-image">
-                      <img src={recipe.image} alt={recipe.title} loading="lazy" />
-                      <button
-                        type="button"
-                        className={`fav-btn ${favorites.has(recipe.id) ? 'is-active' : ''}`}
-                        aria-label={
-                          favorites.has(recipe.id)
-                            ? 'Pašalinti iš mėgstamų'
-                            : 'Pridėti prie mėgstamų'
-                        }
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          toggleFavorite(recipe.id)
-                        }}
-                      >
-                        <Icon name="heart" />
-                      </button>
-                    </div>
-                    <div className="recipe-body">
-                      {recipe.tag && <span className="tag">{recipe.tag}</span>}
-                      <h3>{recipe.title}</h3>
-                      {(recipe.time || recipe.servings || recipe.rating != null) && (
-                        <div className="recipe-meta">
-                          {recipe.time && (
-                            <span>
-                              <Icon name="clock" />
-                              {recipe.time}
-                            </span>
-                          )}
-                          {recipe.servings && (
-                            <span>
-                              <Icon name="user" />
-                              {recipe.servings}
-                            </span>
-                          )}
-                          {recipe.rating != null && <Stars rating={recipe.rating} />}
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
+              <RecipeCards
+                recipes={filteredRecipes}
+                favorites={favorites}
+                onToggleFavorite={toggleFavorite}
+                onOpen={openRecipe}
+              />
             )}
           </div>
         </section>
+
+        {user && (
+          <section className="section recipes-section" id="supabase-receptai">
+            <div className="container">
+              <div className="section-header">
+                <h2>Mano receptai (Supabase)</h2>
+              </div>
+
+              {supabaseLoading && (
+                <p className="recipes-empty" role="status">
+                  Įkeliami receptai iš duomenų bazės...
+                </p>
+              )}
+
+              {!supabaseLoading && supabaseError && (
+                <p className="recipes-empty recipes-error" role="alert">
+                  {supabaseError}
+                </p>
+              )}
+
+              {!supabaseLoading &&
+                !supabaseError &&
+                supabaseRecipes.length === 0 && (
+                  <p className="recipes-empty" role="status">
+                    Duomenų bazėje receptų dar nėra
+                  </p>
+                )}
+
+              {!supabaseLoading &&
+                !supabaseError &&
+                supabaseRecipes.length > 0 &&
+                filteredSupabaseRecipes.length === 0 && (
+                  <p className="recipes-empty" role="status">
+                    Receptų nerasta
+                  </p>
+                )}
+
+              {!supabaseLoading &&
+                !supabaseError &&
+                filteredSupabaseRecipes.length > 0 && (
+                  <RecipeCards
+                    recipes={filteredSupabaseRecipes}
+                    favorites={favorites}
+                    onToggleFavorite={toggleFavorite}
+                    onOpen={openRecipe}
+                  />
+                )}
+            </div>
+          </section>
+        )}
       </main>
 
       <footer className="footer">

@@ -534,6 +534,10 @@
   color: var(--text-muted);
 }
 
+.recipes-error {
+  color: #7a3a3a;
+}
+
 /* —— Footer —— */
 .footer {
   border-top: 1px solid rgba(61, 58, 53, 0.06);
