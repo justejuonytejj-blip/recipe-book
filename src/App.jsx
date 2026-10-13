@@ -67,46 +67,93 @@ const RECIPE_IMAGES = {
   breakfast: '/recipes/breakfast.jpg',
   dinner: '/recipes/dinner.jpg',
   dessert: '/recipes/dessert.jpg',
+  pancakes: '/recipes/pancakes.jpg',
+  chicken: '/recipes/chicken.jpg',
+  salad: '/recipes/salad.jpg',
   default: '/recipes/default.jpg',
 }
 
+const AUTO_RECIPE_IMAGE_URLS = new Set(Object.values(RECIPE_IMAGES))
+
+function isAutoAssignedImage(image) {
+  if (!image || typeof image !== 'string') return true
+  return AUTO_RECIPE_IMAGE_URLS.has(image.trim())
+}
+
 /**
- * Pagal pavadinimo raktažodžius parenka numatytą recepto nuotrauką.
+ * Pagal pavadinimo raktažodžius parenka recepto nuotrauką.
+ * Pirmiau tipas (salotos, blynai, makaronai…), paskui baltymai.
  * Veikia ir be lietuviškų raidžių (naudoja normalizuotą tekstą).
  */
 function getRecipeImageByTitle(title) {
   const normalized = normalizeSearchText(title)
 
+  // Patiekalo tipas – prioritetas prieš baltymus (pvz. „Cezario salotos su vištiena“).
   if (
-    normalized.includes('makaron') ||
-    normalized.includes('pasta')
+    normalized.includes('salot') ||
+    normalized.includes('salad') ||
+    normalized.includes('cezario') ||
+    normalized.includes('caesar')
   ) {
+    return RECIPE_IMAGES.salad
+  }
+
+  if (
+    normalized.includes('blynel') ||
+    normalized.includes('blyn') ||
+    normalized.includes('pancake')
+  ) {
+    return RECIPE_IMAGES.pancakes
+  }
+
+  if (normalized.includes('makaron') || normalized.includes('pasta')) {
     return RECIPE_IMAGES.pasta
   }
 
   if (
-    normalized.includes('avokad') ||
-    normalized.includes('kiausin')
+    normalized.includes('pirag') ||
+    normalized.includes('tort') ||
+    normalized.includes('cake') ||
+    normalized.includes('sokolad') ||
+    normalized.includes('desert') ||
+    normalized.includes('dessert')
   ) {
-    return RECIPE_IMAGES.breakfast
+    return RECIPE_IMAGES.dessert
   }
 
   if (
     normalized.includes('lasis') ||
+    normalized.includes('salmon') ||
     normalized.includes('zuvis')
   ) {
     return RECIPE_IMAGES.dinner
   }
 
+  if (normalized.includes('vist') || normalized.includes('chicken')) {
+    return RECIPE_IMAGES.chicken
+  }
+
   if (
-    normalized.includes('pirag') ||
-    normalized.includes('sokolad') ||
-    normalized.includes('desert')
+    normalized.includes('avokad') ||
+    normalized.includes('kiausin') ||
+    normalized.includes('skrebut')
   ) {
-    return RECIPE_IMAGES.dessert
+    return RECIPE_IMAGES.breakfast
   }
 
   return RECIPE_IMAGES.default
+}
+
+/**
+ * Atvaizdavimui: jei DB turi tik numatytąją nuotrauką, parenka pagal pavadinimą.
+ * Esamų Supabase įrašų masiškai nekeičia.
+ */
+function resolveRecipeDisplayImage(title, imageUrl) {
+  const trimmed = typeof imageUrl === 'string' ? imageUrl.trim() : ''
+  if (!trimmed || trimmed === RECIPE_IMAGES.default) {
+    return getRecipeImageByTitle(title)
+  }
+  return trimmed
 }
 
 const SAMPLE_RECIPES = [
@@ -305,6 +352,7 @@ function loadUserRecipes() {
       id: recipe.id,
       isUserRecipe: true,
       openable: true,
+      image: resolveRecipeDisplayImage(recipe.title, recipe.image),
     }))
   } catch {
     return []
@@ -488,7 +536,7 @@ function mapSupabaseRecipe(row) {
     user_id: row.user_id,
     title: row.title,
     tag: 'Mano receptas',
-    image: row.image_url || RECIPE_IMAGES.default,
+    image: resolveRecipeDisplayImage(row.title, row.image_url),
     openable: true,
     isUserRecipe: false,
     ingredients: parseIngredientLines(row.ingredients || ''),
@@ -803,8 +851,11 @@ function RecipeFormModal({ recipe = null, onClose, onSave }) {
         title: trimmedTitle,
         ingredients,
         steps,
-        // Naujiems receptams nuotrauka parenkama automatiškai; redaguojant paliekama esama.
-        image: recipe?.image ?? getRecipeImageByTitle(trimmedTitle),
+        // Automatinė nuotrauka pagal pavadinimą; rankinė (ne iš auto rinkinio) paliekama.
+        image:
+          !recipe || isAutoAssignedImage(recipe.image)
+            ? getRecipeImageByTitle(trimmedTitle)
+            : recipe.image,
         isUserRecipe: true,
         openable: true,
       })

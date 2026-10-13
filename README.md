@@ -25,7 +25,7 @@ Jau veikiančios funkcijos:
 - Receptų peržiūra – modalinis langas su ingredientais ir gaminimo instrukcija.
 - Receptų paieška pagal pavadinimą – skiltyje „Mano receptai“ (lietuviškos raidės, galūnės, y/i).
 - Receptų pridėjimas – forma modaliniame lange; neprisijungus saugoma `localStorage`, prisijungus – tik Supabase (`public.recipes`).
-- Automatinis naujo recepto nuotraukos priskyrimas pagal pavadinimo raktažodžius (nuotraukos `public/recipes/`).
+- Automatinis recepto nuotraukos priskyrimas pagal pavadinimo raktažodžius (salotos, blynai, makaronai, lašiša, vištiena, desertas ir kt.; nuotraukos `public/recipes/`).
 - Vartotojo pridėtų receptų redagavimas – peržiūros lange mygtukas „Redaguoti“; `localStorage` receptams – lokaliai, savo Supabase receptams – `UPDATE` (pagal `user_id`).
 - Vartotojo pridėtų receptų ištrynimas – su patvirtinimo langu; `localStorage` arba savo Supabase receptų `DELETE` (pagal `user_id` + RLS).
 - Vartotojo registracija per Supabase Auth (el. paštas ir slaptažodis).
@@ -65,7 +65,7 @@ npm run dev
 - Įgyvendinta visų trijų pavyzdinių receptų peržiūra bendrame modaliniame lange.
 - Įgyvendinta veikianti receptų paieška pagal pavadinimą (su lietuviškų raidžių, galūnių ir y/i variantų normalizavimu).
 - Įgyvendintas naujo recepto pridėjimas: neprisijungus – `localStorage`, prisijungus – Supabase CREATE.
-- Naujiems receptams automatiškai priskiriama nuotrauka pagal pavadinimo raktažodžius.
+- Naujiems ir anksčiau su `default.jpg` išsaugotiems receptams nuotrauka parenkama pagal pavadinimą (atvaizdavime ir kuriant / redaguojant).
 - Įgyvendintas vartotojo pridėtų receptų redagavimas: `localStorage` ir savo Supabase receptai (`UPDATE`).
 - Įgyvendintas vartotojo pridėtų receptų ištrynimas: `localStorage` ir savo Supabase receptai (`DELETE`).
 - Supabase klientas (`@supabase/supabase-js`) paruoštas per `src/lib/supabase.js`.
