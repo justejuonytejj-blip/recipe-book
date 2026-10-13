@@ -20,15 +20,15 @@ Tai internetinė aplikacija, kurioje vartotojai galės užsiregistruoti, prisiju
 Jau veikiančios funkcijos:
 
 - Receptų peržiūra – paspaudus ant bet kurios iš trijų receptų kortelių atsidaro bendras modalinis recepto langas su ingredientais ir gaminimo instrukcija (vietiniai pavyzdiniai duomenys).
-- Receptų paieška pagal pavadinimą – filtruoja bendrą receptų sąrašą realiu laiku (nepriklausomai nuo raidžių dydžio, lietuviškų diakritikų ir dažnų žodžių formų; paruošta naudoti su vėliau iš Supabase gaunamais receptais).
+- Receptų paieška pagal pavadinimą – filtruoja bendrą receptų sąrašą realiu laiku (nepriklausomai nuo raidžių dydžio, lietuviškų diakritikų ir dažnų žodžių formų; veikia ir su Supabase receptais).
 - Receptų pridėjimas – forma modaliniame lange; neprisijungus saugoma `localStorage`, prisijungus – tik Supabase (`public.recipes`).
 - Automatinis naujo recepto nuotraukos priskyrimas pagal pavadinimo raktažodžius (nuotraukos `public/recipes/`).
 - Vartotojo pridėtų receptų redagavimas – peržiūros lange mygtukas „Redaguoti“; pakeitimai saugomi `localStorage`.
 - Vartotojo pridėtų receptų ištrynimas – su patvirtinimo langu; pašalinimas iš sąrašo ir `localStorage`.
 - Vartotojo registracija per Supabase Auth (el. paštas ir slaptažodis).
 - Vartotojo prisijungimas ir atsijungimas per Supabase Auth (sesija išlieka perkrovus puslapį).
-- Prisijungusio vartotojo receptų nuskaitymas iš Supabase (`public.recipes`) – rodomi atskirai nuo pavyzdinių ir `localStorage` receptų.
-- Prisijungusio vartotojo naujo recepto kūrimas Supabase (`INSERT`) – po sėkmės sąrašas atnaujinamas be perkrovimo.
+- Prisijungusio vartotojo receptų nuskaitymas iš Supabase (`public.recipes`) – rodomi tame pačiame bendrame sąraše su pavyzdiniais ir `localStorage` receptais.
+- Prisijungusio vartotojo naujo recepto kūrimas Supabase (`INSERT`) – po sėkmės atsiranda bendrame sąraše be perkrovimo.
 
 Planuojamos funkcijos:
 
@@ -71,4 +71,5 @@ npm run dev
 - Įgyvendintas prisijungimas ir atsijungimas per Supabase Auth.
 - Įgyvendintas prisijungusio vartotojo receptų skaitymas (READ) iš Supabase.
 - Įgyvendintas prisijungusio vartotojo receptų kūrimas (CREATE) Supabase.
+- Supabase receptai rodomi bendrame receptų sąraše (be atskiros skilties).
 - Redagavimas ir trynimas vis dar naudoja `localStorage` (Supabase UPDATE/DELETE dar neįgyvendinta).

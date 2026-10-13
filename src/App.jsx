@@ -496,7 +496,7 @@ function mapSupabaseRecipe(row) {
   return {
     id: row.id,
     title: row.title,
-    tag: 'Duomenų bazė',
+    tag: 'Mano receptas',
     image: row.image_url || RECIPE_IMAGES.default,
     openable: true,
     isUserRecipe: false,
@@ -504,6 +504,21 @@ function mapSupabaseRecipe(row) {
     steps: parseStepLines(row.instructions || ''),
     source: 'supabase',
   }
+}
+
+/** Jungia receptų sąrašus be pasikartojančių id. */
+function mergeRecipesById(...lists) {
+  const seen = new Set()
+  const merged = []
+
+  lists.flat().forEach((recipe) => {
+    const key = String(recipe.id)
+    if (seen.has(key)) return
+    seen.add(key)
+    merged.push(recipe)
+  })
+
+  return merged
 }
 
 function RecipeCards({ recipes, favorites, onToggleFavorite, onOpen }) {
@@ -1316,7 +1331,11 @@ function App() {
     setIsLoginOpen(true)
   }
 
-  const recipes = [...SAMPLE_RECIPES, ...userRecipes]
+  const recipes = mergeRecipesById(
+    SAMPLE_RECIPES,
+    supabaseRecipes,
+    userRecipes,
+  )
 
   useEffect(() => {
     if (!toastMessage) return undefined
@@ -1484,7 +1503,6 @@ function App() {
   }
 
   const filteredRecipes = filterRecipesByTitle(recipes, query)
-  const filteredSupabaseRecipes = filterRecipesByTitle(supabaseRecipes, query)
 
   return (
     <div className="page">
@@ -1642,6 +1660,18 @@ function App() {
               </a>
             </div>
 
+            {supabaseLoading && (
+              <p className="recipes-empty" role="status">
+                Įkeliami receptai iš duomenų bazės...
+              </p>
+            )}
+
+            {!supabaseLoading && supabaseError && (
+              <p className="recipes-empty recipes-error" role="alert">
+                {supabaseError}
+              </p>
+            )}
+
             {filteredRecipes.length === 0 ? (
               <p className="recipes-empty" role="status">
                 Receptų nerasta
@@ -1656,56 +1686,6 @@ function App() {
             )}
           </div>
         </section>
-
-        {user && (
-          <section className="section recipes-section" id="supabase-receptai">
-            <div className="container">
-              <div className="section-header">
-                <h2>Mano receptai (Supabase)</h2>
-              </div>
-
-              {supabaseLoading && (
-                <p className="recipes-empty" role="status">
-                  Įkeliami receptai iš duomenų bazės...
-                </p>
-              )}
-
-              {!supabaseLoading && supabaseError && (
-                <p className="recipes-empty recipes-error" role="alert">
-                  {supabaseError}
-                </p>
-              )}
-
-              {!supabaseLoading &&
-                !supabaseError &&
-                supabaseRecipes.length === 0 && (
-                  <p className="recipes-empty" role="status">
-                    Duomenų bazėje receptų dar nėra
-                  </p>
-                )}
-
-              {!supabaseLoading &&
-                !supabaseError &&
-                supabaseRecipes.length > 0 &&
-                filteredSupabaseRecipes.length === 0 && (
-                  <p className="recipes-empty" role="status">
-                    Receptų nerasta
-                  </p>
-                )}
-
-              {!supabaseLoading &&
-                !supabaseError &&
-                filteredSupabaseRecipes.length > 0 && (
-                  <RecipeCards
-                    recipes={filteredSupabaseRecipes}
-                    favorites={favorites}
-                    onToggleFavorite={toggleFavorite}
-                    onOpen={openRecipe}
-                  />
-                )}
-            </div>
-          </section>
-        )}
       </main>
 
       <footer className="footer">
