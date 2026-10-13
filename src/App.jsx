@@ -1864,8 +1864,8 @@ function App() {
               {!user && (
                 <div className="recipes-empty-state" role="status">
                   <p>
-                    Prisijunkite, kad matytumėte ir valdytumėte savo receptus
-                    debesyje.
+                    Prisijunkite, kad galėtumėte išsaugoti, peržiūrėti ir
+                    redaguoti savo receptus.
                   </p>
                   <button
                     type="button"
