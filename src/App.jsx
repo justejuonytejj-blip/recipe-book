@@ -200,11 +200,6 @@ const SAMPLE_RECIPES = [
   },
 ]
 
-const navLinks = [
-  { href: '#', label: 'Pagrindinis', active: true },
-  { href: '#receptai', label: 'Mano receptai' },
-]
-
 const LT_CHAR_MAP = {
   ą: 'a',
   č: 'c',
@@ -523,21 +518,6 @@ function canManageRecipe(recipe, currentUser) {
   }
 
   return Boolean(recipe.isUserRecipe)
-}
-
-/** Jungia receptų sąrašus be pasikartojančių id. */
-function mergeRecipesById(...lists) {
-  const seen = new Set()
-  const merged = []
-
-  lists.flat().forEach((recipe) => {
-    const key = String(recipe.id)
-    if (seen.has(key)) return
-    seen.add(key)
-    merged.push(recipe)
-  })
-
-  return merged
 }
 
 function RecipeCards({ recipes, favorites, onToggleFavorite, onOpen }) {
@@ -1316,6 +1296,7 @@ function LoginModal({ onClose, onSuccessToast }) {
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [activePage, setActivePage] = useState('home')
   const [favorites, setFavorites] = useState(new Set())
   const [query, setQuery] = useState('')
   const [selectedRecipe, setSelectedRecipe] = useState(null)
@@ -1338,6 +1319,23 @@ function App() {
     setSupabaseLoading(false)
   }
 
+  const goHome = () => {
+    setActivePage('home')
+    setQuery('')
+    setMenuOpen(false)
+  }
+
+  const goMyRecipes = () => {
+    setActivePage('my-recipes')
+    setQuery('')
+    setMenuOpen(false)
+  }
+
+  const openAddRecipe = () => {
+    setActivePage('my-recipes')
+    setIsAddOpen(true)
+  }
+
   const openRegister = () => {
     setMenuOpen(false)
     setIsLoginOpen(false)
@@ -1349,12 +1347,6 @@ function App() {
     setIsRegisterOpen(false)
     setIsLoginOpen(true)
   }
-
-  const recipes = mergeRecipesById(
-    SAMPLE_RECIPES,
-    supabaseRecipes,
-    userRecipes,
-  )
 
   useEffect(() => {
     if (!toastMessage) return undefined
@@ -1534,6 +1526,7 @@ function App() {
 
       setSupabaseRecipes((prev) => [mapSupabaseRecipe(data), ...prev])
       closeRecipeForm()
+      setActivePage('my-recipes')
       setToastMessage('Receptas sėkmingai išsaugotas')
       return
     }
@@ -1546,6 +1539,7 @@ function App() {
     setUserRecipes(nextUserRecipes)
     saveUserRecipes(nextUserRecipes)
     closeRecipeForm()
+    setActivePage('my-recipes')
 
     if (isLocalEdit) {
       setSelectedRecipe(recipe)
@@ -1595,31 +1589,55 @@ function App() {
     setToastMessage('Receptas sėkmingai ištrintas')
   }
 
-  const filteredRecipes = filterRecipesByTitle(recipes, query)
+  const filteredSupabaseRecipes = filterRecipesByTitle(supabaseRecipes, query)
+  const filteredLocalRecipes = filterRecipesByTitle(userRecipes, query)
 
   return (
     <div className="page">
       <header className="header">
         <div className="container header-inner">
-          <a href="#" className="logo">
+          <a
+            href="#"
+            className="logo"
+            onClick={(event) => {
+              event.preventDefault()
+              goHome()
+            }}
+          >
             <LeafLogo />
             <span>Recipe Book</span>
           </a>
 
           <nav className="nav-desktop" aria-label="Pagrindinė navigacija">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className={link.active ? 'active' : undefined}
-              >
-                {link.label}
-              </a>
-            ))}
+            <a
+              href="#"
+              className={activePage === 'home' ? 'active' : undefined}
+              onClick={(event) => {
+                event.preventDefault()
+                goHome()
+              }}
+            >
+              Pagrindinis
+            </a>
+            <a
+              href="#mano-receptai"
+              className={activePage === 'my-recipes' ? 'active' : undefined}
+              onClick={(event) => {
+                event.preventDefault()
+                goMyRecipes()
+              }}
+            >
+              Mano receptai
+            </a>
           </nav>
 
           <div className="header-actions">
-            <button type="button" className="icon-btn search-btn" aria-label="Ieškoti">
+            <button
+              type="button"
+              className="icon-btn search-btn"
+              aria-label="Ieškoti"
+              onClick={goMyRecipes}
+            >
               <Icon name="search" />
             </button>
             {authReady &&
@@ -1661,16 +1679,26 @@ function App() {
 
         {menuOpen && (
           <nav className="nav-mobile" aria-label="Mobilioji navigacija">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className={link.active ? 'active' : undefined}
-                onClick={() => setMenuOpen(false)}
-              >
-                {link.label}
-              </a>
-            ))}
+            <a
+              href="#"
+              className={activePage === 'home' ? 'active' : undefined}
+              onClick={(event) => {
+                event.preventDefault()
+                goHome()
+              }}
+            >
+              Pagrindinis
+            </a>
+            <a
+              href="#mano-receptai"
+              className={activePage === 'my-recipes' ? 'active' : undefined}
+              onClick={(event) => {
+                event.preventDefault()
+                goMyRecipes()
+              }}
+            >
+              Mano receptai
+            </a>
             <div className="nav-mobile-actions">
               {authReady &&
                 (user ? (
@@ -1701,89 +1729,214 @@ function App() {
       </header>
 
       <main>
-        <section className="hero">
-          <div className="container hero-grid">
-            <div className="hero-content">
-              <p className="eyebrow">
-                Sveiki atvykę <span className="eyebrow-line" aria-hidden="true" />
-              </p>
-              <h1>Mano receptų knyga</h1>
-              <p className="hero-lead">
-                Išsaugok, atrask ir kurk savo mėgstamus receptus vienoje vietoje.
-              </p>
+        {activePage === 'home' && (
+          <>
+            <section className="hero">
+              <div className="container hero-grid">
+                <div className="hero-content">
+                  <p className="eyebrow">
+                    Sveiki atvykę{' '}
+                    <span className="eyebrow-line" aria-hidden="true" />
+                  </p>
+                  <h1>Mano receptų knyga</h1>
+                  <p className="hero-lead">
+                    Išsaugok, atrask ir kurk savo mėgstamus receptus vienoje
+                    vietoje.
+                  </p>
 
-              <div className="hero-controls">
-                <label className="search-field">
-                  <Icon name="search" />
-                  <input
-                    type="search"
-                    placeholder="Ieškoti receptų..."
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-add"
-                  onClick={() => setIsAddOpen(true)}
-                >
-                  <Icon name="plus" />
-                  Pridėti receptą
-                </button>
+                  <div className="hero-controls">
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-add"
+                      onClick={openAddRecipe}
+                    >
+                      <Icon name="plus" />
+                      Pridėti receptą
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={goMyRecipes}
+                    >
+                      Mano receptai
+                    </button>
+                  </div>
+                </div>
+
+                <div className="hero-visual" aria-hidden="true">
+                  <div className="hero-circle">
+                    <img
+                      src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80"
+                      alt=""
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            </section>
 
-            <div className="hero-visual" aria-hidden="true">
-              <div className="hero-circle">
-                <img
-                  src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80"
-                  alt=""
+            <section className="section recipes-section" id="receptai">
+              <div className="container">
+                <div className="section-header">
+                  <h2>Populiarūs receptai</h2>
+                </div>
+
+                <RecipeCards
+                  recipes={SAMPLE_RECIPES}
+                  favorites={favorites}
+                  onToggleFavorite={toggleFavorite}
+                  onOpen={openRecipe}
                 />
               </div>
+            </section>
+          </>
+        )}
+
+        {activePage === 'my-recipes' && (
+          <section
+            className="section recipes-section my-recipes-page"
+            id="mano-receptai"
+          >
+            <div className="container">
+              <div className="my-recipes-header">
+                <div className="my-recipes-intro">
+                  <p className="eyebrow">
+                    Asmeniniai{' '}
+                    <span className="eyebrow-line" aria-hidden="true" />
+                  </p>
+                  <h1 className="my-recipes-title">Mano receptai</h1>
+                  <p className="my-recipes-lead">
+                    Čia saugomi tavo receptai. Prisijungus jie sinchronizuojami
+                    per Supabase.
+                  </p>
+                </div>
+
+                <div className="hero-controls my-recipes-controls">
+                  <label className="search-field">
+                    <Icon name="search" />
+                    <input
+                      type="search"
+                      placeholder="Ieškoti receptų..."
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-add"
+                    onClick={() => setIsAddOpen(true)}
+                  >
+                    <Icon name="plus" />
+                    Pridėti receptą
+                  </button>
+                </div>
+              </div>
+
+              {user && supabaseLoading && (
+                <p className="recipes-empty" role="status">
+                  Įkeliami receptai iš duomenų bazės...
+                </p>
+              )}
+
+              {user && !supabaseLoading && supabaseError && (
+                <p className="recipes-empty recipes-error" role="alert">
+                  {supabaseError}
+                </p>
+              )}
+
+              {!user && (
+                <div className="recipes-empty-state" role="status">
+                  <p>
+                    Prisijunkite, kad matytumėte ir valdytumėte savo receptus
+                    debesyje.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={openLogin}
+                  >
+                    Prisijungti
+                  </button>
+                </div>
+              )}
+
+              {user &&
+                !supabaseLoading &&
+                !supabaseError &&
+                supabaseRecipes.length === 0 &&
+                !query.trim() && (
+                  <div className="recipes-empty-state" role="status">
+                    <p>Dar neturite receptų</p>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => setIsAddOpen(true)}
+                    >
+                      <Icon name="plus" />
+                      Pridėti receptą
+                    </button>
+                  </div>
+                )}
+
+              {user &&
+                !supabaseLoading &&
+                !supabaseError &&
+                supabaseRecipes.length > 0 &&
+                filteredSupabaseRecipes.length === 0 && (
+                  <p className="recipes-empty" role="status">
+                    Receptų nerasta
+                  </p>
+                )}
+
+              {user &&
+                !supabaseLoading &&
+                !supabaseError &&
+                filteredSupabaseRecipes.length > 0 && (
+                  <RecipeCards
+                    recipes={filteredSupabaseRecipes}
+                    favorites={favorites}
+                    onToggleFavorite={toggleFavorite}
+                    onOpen={openRecipe}
+                  />
+                )}
+
+              {userRecipes.length > 0 && (
+                <div className="local-recipes-block">
+                  <div className="section-header">
+                    <h2>Šios naršyklės receptai</h2>
+                  </div>
+                  <p className="local-recipes-note">
+                    Šie receptai saugomi tik šiame įrenginyje (localStorage) ir
+                    nėra susieti su Supabase paskyra.
+                  </p>
+                  {filteredLocalRecipes.length === 0 ? (
+                    <p className="recipes-empty" role="status">
+                      Receptų nerasta
+                    </p>
+                  ) : (
+                    <RecipeCards
+                      recipes={filteredLocalRecipes}
+                      favorites={favorites}
+                      onToggleFavorite={toggleFavorite}
+                      onOpen={openRecipe}
+                    />
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        </section>
-
-        <section className="section recipes-section" id="receptai">
-          <div className="container">
-            <div className="section-header">
-              <h2>Populiarūs receptai</h2>
-              <a href="#receptai" className="view-all">
-                Peržiūrėti visus <span aria-hidden="true">→</span>
-              </a>
-            </div>
-
-            {supabaseLoading && (
-              <p className="recipes-empty" role="status">
-                Įkeliami receptai iš duomenų bazės...
-              </p>
-            )}
-
-            {!supabaseLoading && supabaseError && (
-              <p className="recipes-empty recipes-error" role="alert">
-                {supabaseError}
-              </p>
-            )}
-
-            {filteredRecipes.length === 0 ? (
-              <p className="recipes-empty" role="status">
-                Receptų nerasta
-              </p>
-            ) : (
-              <RecipeCards
-                recipes={filteredRecipes}
-                favorites={favorites}
-                onToggleFavorite={toggleFavorite}
-                onOpen={openRecipe}
-              />
-            )}
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
       <footer className="footer">
         <div className="container footer-inner">
-          <a href="#" className="logo">
+          <a
+            href="#"
+            className="logo"
+            onClick={(event) => {
+              event.preventDefault()
+              goHome()
+            }}
+          >
             <LeafLogo />
             <span>Recipe Book</span>
           </a>
@@ -1792,15 +1945,36 @@ function App() {
       </footer>
 
       <nav className="bottom-nav" aria-label="Apatinė navigacija">
-        <a href="#" className="active">
+        <a
+          href="#"
+          className={activePage === 'home' ? 'active' : undefined}
+          onClick={(event) => {
+            event.preventDefault()
+            goHome()
+          }}
+        >
           <Icon name="home" />
           <span>Pagrindinis</span>
         </a>
-        <a href="#receptai">
+        <a
+          href="#mano-receptai"
+          className={activePage === 'my-recipes' ? 'active' : undefined}
+          onClick={(event) => {
+            event.preventDefault()
+            goMyRecipes()
+          }}
+        >
           <Icon name="book" />
-          <span>Receptai</span>
+          <span>Mano receptai</span>
         </a>
-        <a href="#">
+        <a
+          href="#"
+          onClick={(event) => {
+            event.preventDefault()
+            if (user) goMyRecipes()
+            else openLogin()
+          }}
+        >
           <Icon name="user" />
           <span>Profilis</span>
         </a>

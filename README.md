@@ -19,16 +19,19 @@ Tai internetinė aplikacija, kurioje vartotojai galės užsiregistruoti, prisiju
 
 Jau veikiančios funkcijos:
 
-- Receptų peržiūra – paspaudus ant bet kurios iš trijų receptų kortelių atsidaro bendras modalinis recepto langas su ingredientais ir gaminimo instrukcija (vietiniai pavyzdiniai duomenys).
-- Receptų paieška pagal pavadinimą – filtruoja bendrą receptų sąrašą realiu laiku (nepriklausomai nuo raidžių dydžio, lietuviškų diakritikų ir dažnų žodžių formų; veikia ir su Supabase receptais).
+- Navigacija tarp „Pagrindinis“ ir „Mano receptai“ (desktop + mobilus), su aktyvaus punkto žymėjimu.
+- Pagrindinis puslapis – hero ir skiltis „Populiarūs receptai“ su 3 pavyzdiniais receptais.
+- „Mano receptai“ – asmeninių Supabase receptų puslapis su paieška, pridėjimu ir tuščios būsenos pranešimu.
+- Receptų peržiūra – modalinis langas su ingredientais ir gaminimo instrukcija.
+- Receptų paieška pagal pavadinimą – skiltyje „Mano receptai“ (lietuviškos raidės, galūnės, y/i).
 - Receptų pridėjimas – forma modaliniame lange; neprisijungus saugoma `localStorage`, prisijungus – tik Supabase (`public.recipes`).
 - Automatinis naujo recepto nuotraukos priskyrimas pagal pavadinimo raktažodžius (nuotraukos `public/recipes/`).
 - Vartotojo pridėtų receptų redagavimas – peržiūros lange mygtukas „Redaguoti“; `localStorage` receptams – lokaliai, savo Supabase receptams – `UPDATE` (pagal `user_id`).
 - Vartotojo pridėtų receptų ištrynimas – su patvirtinimo langu; `localStorage` arba savo Supabase receptų `DELETE` (pagal `user_id` + RLS).
 - Vartotojo registracija per Supabase Auth (el. paštas ir slaptažodis).
 - Vartotojo prisijungimas ir atsijungimas per Supabase Auth (sesija išlieka perkrovus puslapį).
-- Prisijungusio vartotojo receptų nuskaitymas iš Supabase (`public.recipes`) – rodomi tame pačiame bendrame sąraše su pavyzdiniais ir `localStorage` receptais.
-- Prisijungusio vartotojo naujo recepto kūrimas Supabase (`INSERT`) – po sėkmės atsiranda bendrame sąraše be perkrovimo.
+- Prisijungusio vartotojo receptų CRUD per Supabase – rodomi tik skiltyje „Mano receptai“.
+- `localStorage` receptai rodomi atskirai („Šios naršyklės receptai“), nesiejant jų su Supabase paskyra.
 
 Planuojamos funkcijos:
 
@@ -70,5 +73,5 @@ npm run dev
 - Įgyvendintas prisijungimas ir atsijungimas per Supabase Auth.
 - Įgyvendintas prisijungusio vartotojo receptų skaitymas (READ) iš Supabase.
 - Įgyvendintas prisijungusio vartotojo receptų kūrimas (CREATE) Supabase.
-- Supabase receptai rodomi bendrame receptų sąraše (be atskiros skilties).
+- Supabase receptai rodomi skiltyje „Mano receptai“; pagrindiniame – tik pavyzdiniai.
 - Redaguoti / Ištrinti rodomi tik savo receptams (Supabase – pagal `user.id` ir `recipes.user_id`).
