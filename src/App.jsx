@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
-const recipes = [
+const STORAGE_KEY = 'recipe-book-user-recipes'
+const RECIPE_PLACEHOLDER = '/recipe-placeholder.svg'
+
+const SAMPLE_RECIPES = [
   {
     id: 1,
     title: 'Kreminiai makaronai su grybais',
@@ -190,6 +193,44 @@ function filterRecipesByTitle(recipeList, searchQuery) {
   })
 }
 
+function loadUserRecipes() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function saveUserRecipes(userRecipes) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(userRecipes))
+}
+
+function parseIngredientLines(text) {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const match = line.match(
+        /^(\d+[.,]?\d*\s*[a-ząčęėįšųūžA-ZĄČĘĖĮŠŲŪŽ.%]*\.?|\d+\s*v\.?\s*š\.?|pagal\s+skonį)\s+(.+)$/iu,
+      )
+      if (match) {
+        return { amount: match[1].trim(), name: match[2].trim() }
+      }
+      return { amount: '', name: line }
+    })
+}
+
+function parseStepLines(text) {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
 function LeafLogo() {
   return (
     <svg
@@ -337,27 +378,37 @@ function RecipeModal({ recipe, onClose }) {
         </div>
 
         <div className="modal-body">
-          <span className="tag">{recipe.tag}</span>
+          {recipe.tag && <span className="tag">{recipe.tag}</span>}
           <h2 id="recipe-modal-title">{recipe.title}</h2>
 
-          <div className="modal-meta">
-            <span>
-              <Icon name="clock" />
-              {recipe.time}
-            </span>
-            <span>
-              <Icon name="user" />
-              {recipe.servings} porcijos
-            </span>
-          </div>
+          {(recipe.time || recipe.servings) && (
+            <div className="modal-meta">
+              {recipe.time && (
+                <span>
+                  <Icon name="clock" />
+                  {recipe.time}
+                </span>
+              )}
+              {recipe.servings && (
+                <span>
+                  <Icon name="user" />
+                  {recipe.servings} porcijos
+                </span>
+              )}
+            </div>
+          )}
 
           <section className="modal-section">
             <h3>Ingredientai</h3>
             <ul className="ingredient-list">
-              {recipe.ingredients.map((item) => (
-                <li key={`${item.amount}-${item.name}`}>
-                  <span className="ingredient-amount">{item.amount}</span>
-                  <span>{item.name}</span>
+              {recipe.ingredients.map((item, index) => (
+                <li key={`${index}-${item.name}`}>
+                  {item.amount ? (
+                    <span className="ingredient-amount">{item.amount}</span>
+                  ) : null}
+                  <span className={item.amount ? undefined : 'ingredient-full'}>
+                    {item.name}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -367,7 +418,7 @@ function RecipeModal({ recipe, onClose }) {
             <h3>Gaminimo instrukcija</h3>
             <ol className="steps-list">
               {recipe.steps.map((step, index) => (
-                <li key={step}>
+                <li key={`${index}-${step.slice(0, 24)}`}>
                   <span className="step-number">{index + 1}</span>
                   <p>{step}</p>
                 </li>
@@ -384,11 +435,144 @@ function RecipeModal({ recipe, onClose }) {
   )
 }
 
+function AddRecipeModal({ onClose, onSave }) {
+  const [title, setTitle] = useState('')
+  const [ingredientsText, setIngredientsText] = useState('')
+  const [instructionsText, setInstructionsText] = useState('')
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [onClose])
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+
+    const trimmedTitle = title.trim()
+    const ingredients = parseIngredientLines(ingredientsText)
+    const steps = parseStepLines(instructionsText)
+
+    if (!trimmedTitle || ingredients.length === 0 || steps.length === 0) {
+      setError('Užpildykite visus privalomus laukus: pavadinimą, ingredientus ir gaminimo instrukciją.')
+      return
+    }
+
+    onSave({
+      id: `user-${Date.now()}`,
+      title: trimmedTitle,
+      tag: 'Mano receptas',
+      image: RECIPE_PLACEHOLDER,
+      openable: true,
+      ingredients,
+      steps,
+      isUserRecipe: true,
+    })
+  }
+
+  return (
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className="modal modal-form"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-recipe-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="modal-close-icon"
+          aria-label="Uždaryti"
+          onClick={onClose}
+        >
+          <Icon name="close" />
+        </button>
+
+        <form className="modal-body add-recipe-form" onSubmit={handleSubmit}>
+          <h2 id="add-recipe-title">Pridėti receptą</h2>
+          <p className="form-lead">
+            Užpildykite privalomus laukus. Ingredientus ir instrukciją rašykite po vieną eilutę.
+          </p>
+
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+
+          <label className="form-field">
+            <span>Recepto pavadinimas *</span>
+            <input
+              type="text"
+              value={title}
+              onChange={(event) => {
+                setTitle(event.target.value)
+                setError('')
+              }}
+              placeholder="Pvz. Šokoladinis pyragas"
+              autoFocus
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Ingredientai *</span>
+            <textarea
+              rows={5}
+              value={ingredientsText}
+              onChange={(event) => {
+                setIngredientsText(event.target.value)
+                setError('')
+              }}
+              placeholder={'Pvz.\n200 g miltų\n2 vnt. kiaušiniai\n100 g cukraus'}
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Gaminimo instrukcija *</span>
+            <textarea
+              rows={6}
+              value={instructionsText}
+              onChange={(event) => {
+                setInstructionsText(event.target.value)
+                setError('')
+              }}
+              placeholder={'Pvz.\nĮkaitinkite orkaitę.\nSumaišykite ingredientus.\nKepkite 30 min.'}
+            />
+          </label>
+
+          <div className="form-actions">
+            <button type="button" className="btn btn-outline form-btn" onClick={onClose}>
+              Atšaukti
+            </button>
+            <button type="submit" className="btn btn-primary form-btn">
+              Išsaugoti
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [favorites, setFavorites] = useState(new Set())
   const [query, setQuery] = useState('')
   const [selectedRecipe, setSelectedRecipe] = useState(null)
+  const [isAddOpen, setIsAddOpen] = useState(false)
+  const [userRecipes, setUserRecipes] = useState(() => loadUserRecipes())
+
+  const recipes = [...SAMPLE_RECIPES, ...userRecipes]
 
   const toggleFavorite = (id) => {
     setFavorites((prev) => {
@@ -402,6 +586,13 @@ function App() {
   const openRecipe = (recipe) => {
     if (!recipe.openable) return
     setSelectedRecipe(recipe)
+  }
+
+  const handleSaveRecipe = (recipe) => {
+    const nextUserRecipes = [...userRecipes, recipe]
+    setUserRecipes(nextUserRecipes)
+    saveUserRecipes(nextUserRecipes)
+    setIsAddOpen(false)
   }
 
   const filteredRecipes = filterRecipesByTitle(recipes, query)
@@ -495,7 +686,11 @@ function App() {
                     onChange={(e) => setQuery(e.target.value)}
                   />
                 </label>
-                <button type="button" className="btn btn-primary btn-add">
+                <button
+                  type="button"
+                  className="btn btn-primary btn-add"
+                  onClick={() => setIsAddOpen(true)}
+                >
                   <Icon name="plus" />
                   Pridėti receptą
                 </button>
@@ -568,19 +763,25 @@ function App() {
                       </button>
                     </div>
                     <div className="recipe-body">
-                      <span className="tag">{recipe.tag}</span>
+                      {recipe.tag && <span className="tag">{recipe.tag}</span>}
                       <h3>{recipe.title}</h3>
-                      <div className="recipe-meta">
-                        <span>
-                          <Icon name="clock" />
-                          {recipe.time}
-                        </span>
-                        <span>
-                          <Icon name="user" />
-                          {recipe.servings}
-                        </span>
-                        <Stars rating={recipe.rating} />
-                      </div>
+                      {(recipe.time || recipe.servings || recipe.rating != null) && (
+                        <div className="recipe-meta">
+                          {recipe.time && (
+                            <span>
+                              <Icon name="clock" />
+                              {recipe.time}
+                            </span>
+                          )}
+                          {recipe.servings && (
+                            <span>
+                              <Icon name="user" />
+                              {recipe.servings}
+                            </span>
+                          )}
+                          {recipe.rating != null && <Stars rating={recipe.rating} />}
+                        </div>
+                      )}
                     </div>
                   </article>
                 ))}
@@ -619,6 +820,13 @@ function App() {
         <RecipeModal
           recipe={selectedRecipe}
           onClose={() => setSelectedRecipe(null)}
+        />
+      )}
+
+      {isAddOpen && (
+        <AddRecipeModal
+          onClose={() => setIsAddOpen(false)}
+          onSave={handleSaveRecipe}
         />
       )}
     </div>

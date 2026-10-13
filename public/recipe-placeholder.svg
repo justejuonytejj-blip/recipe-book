@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 550" fill="none">
+  <rect width="800" height="550" fill="#EFE8DC"/>
+  <rect x="0" y="0" width="800" height="550" fill="url(#fade)"/>
+  <circle cx="400" cy="250" r="72" stroke="#6B7C3E" stroke-width="3" opacity="0.45"/>
+  <path
+    d="M400 292c8-28 28-50 54-62-10 32-26 52-54 62Z"
+    fill="#6B7C3E"
+    opacity="0.55"
+  />
+  <path
+    d="M400 292c-10-30-32-52-60-62 14 30 30 50 60 62Z"
+    fill="#6B7C3E"
+    opacity="0.35"
+  />
+  <path
+    d="M400 292V220"
+    stroke="#6B7C3E"
+    stroke-width="3"
+    stroke-linecap="round"
+    opacity="0.55"
+  />
+  <text
+    x="400"
+    y="370"
+    text-anchor="middle"
+    fill="#8A847A"
+    font-family="Georgia, serif"
+    font-size="28"
+  >Recipe Book</text>
+  <defs>
+    <linearGradient id="fade" x1="0" y1="0" x2="800" y2="550" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F4EF"/>
+      <stop offset="1" stop-color="#E8DFD2"/>
+    </linearGradient>
+  </defs>
+</svg>

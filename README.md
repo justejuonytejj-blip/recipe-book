@@ -21,11 +21,11 @@ Jau veikiančios funkcijos:
 
 - Receptų peržiūra – paspaudus ant bet kurios iš trijų receptų kortelių atsidaro bendras modalinis recepto langas su ingredientais ir gaminimo instrukcija (vietiniai pavyzdiniai duomenys).
 - Receptų paieška pagal pavadinimą – filtruoja bendrą receptų sąrašą realiu laiku (nepriklausomai nuo raidžių dydžio, lietuviškų diakritikų ir dažnų žodžių formų; paruošta naudoti su vėliau iš Supabase gaunamais receptais).
+- Receptų pridėjimas – forma modaliniame lange; nauji receptai laikinai saugomi naršyklės `localStorage` (ne Supabase).
 
 Planuojamos funkcijos:
 
 - Registracija ir prisijungimas.
-- Receptų pridėjimas.
 - Receptų redagavimas.
 - Receptų ištrynimas.
 - Receptų saugojimas Supabase duomenų bazėje.
@@ -53,6 +53,7 @@ npm run dev
 - Sukurtas pradinis „Recipe Book“ svetainės dizainas.
 - Įgyvendinta visų trijų pavyzdinių receptų peržiūra bendrame modaliniame lange.
 - Įgyvendinta veikianti receptų paieška pagal pavadinimą (su lietuviškų raidžių, galūnių ir y/i variantų normalizavimu).
+- Įgyvendintas naujo recepto pridėjimas su `localStorage` saugojimu (Supabase dar nenaudojama).
 - Registracija ir prisijungimas dar neįgyvendinti.
 - Supabase duomenų bazė dar neprijungta.
-- Receptų pridėjimas, redagavimas ir ištrynimas dar neįgyvendinti.
+- Receptų redagavimas ir ištrynimas dar neįgyvendinti.
