@@ -1,16 +1,52 @@
-# React + Vite
+# Recipe Book
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Recipe Book – receptų katalogas.
 
-Currently, two official plugins are available:
+## Projekto aprašymas
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Tai internetinė aplikacija, kurioje vartotojai galės užsiregistruoti, prisijungti ir saugoti savo mėgstamus receptus vienoje vietoje.
 
-## React Compiler
+## Naudojamos technologijos
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React
+- JavaScript
+- Vite
+- CSS
+- Supabase (bus prijungta vėliau)
+- GitHub
 
-## Expanding the Oxlint configuration
+## MVP funkcionalumai
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Planuojamos funkcijos:
+
+- Registracija ir prisijungimas.
+- Receptų pridėjimas.
+- Receptų peržiūra.
+- Receptų redagavimas.
+- Receptų ištrynimas.
+- Receptų saugojimas Supabase duomenų bazėje.
+- Kiekvienas vartotojas matys tik savo receptus.
+
+## Kaip paleisti projektą
+
+1. Įdiekite priklausomybes:
+
+```bash
+npm install
+```
+
+2. Paleiskite vystymo serverį:
+
+```bash
+npm run dev
+```
+
+3. Atidarykite naršyklėje adresą, kurį parodytų Vite (dažniausiai `http://localhost:5173`).
+
+## Dabartinė projekto būsena
+
+- Sukurtas React + Vite projektas.
+- Sukurtas pradinis „Recipe Book“ svetainės dizainas.
+- Registracija ir prisijungimas dar neįgyvendinti.
+- Supabase duomenų bazė dar neprijungta.
+- Receptų CRUD funkcijos dar neįgyvendintos.
