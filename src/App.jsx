@@ -42,6 +42,23 @@ const recipes = [
     rating: 4.9,
     image:
       'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800&q=80',
+    openable: true,
+    ingredients: [
+      { amount: '2 riekės', name: 'rūgštinės duonos (pvz. sourdough)' },
+      { amount: '1 vnt.', name: 'prinokęs avokadas' },
+      { amount: '1–2 vnt.', name: 'kiaušiniai' },
+      { amount: '1 šaukštelis', name: 'citrinos sulčių' },
+      { amount: '1 šaukštelis', name: 'alyvuogių aliejaus' },
+      { amount: 'žiupsnelis', name: 'druskos ir juodųjų pipirų' },
+      { amount: 'pagal skonį', name: 'čili dribsniai arba šviežios žolelės' },
+    ],
+    steps: [
+      'Duoną paskrudinkite tosteriuje arba keptuvėje su lašeliu aliejaus, kol ji taps traški ir auksinė.',
+      'Avokadą perpjaukite perpus, išimkite kauliuką, minkštimą išgriebkite šaukštu į dubenėlį. Sutrinkite šakute, įlašinkite citrinos sulčių, įberkite druskos ir pipirų.',
+      'Atskirai išvirkite kiaušinius: keptuvėje su trupučiu aliejaus kepkite 3–4 min. saulutei arba 2–3 min. kiekvienoje pusėje, jei mėgstate kietesnį trynį.',
+      'Ant skrebučių užtepkite avokado tyrę lygiu sluoksniu.',
+      'Ant viršaus uždėkite kiaušinį, pabarstykite čili dribsniais arba smulkintomis žolelėmis ir patiekite iškart.',
+    ],
   },
   {
     id: 3,
@@ -52,6 +69,26 @@ const recipes = [
     rating: 4.7,
     image:
       'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80',
+    openable: true,
+    ingredients: [
+      { amount: '2 vnt.', name: 'lašišos filė (po ~150–180 g)' },
+      { amount: '200 g', name: 'brokolių žiedynų' },
+      { amount: '1 vnt.', name: 'cukinija' },
+      { amount: '1 vnt.', name: 'raudonoji paprika' },
+      { amount: '2 v. š.', name: 'alyvuogių aliejaus' },
+      { amount: '1 skiltelė', name: 'česnako' },
+      { amount: '1 v. š.', name: 'citrinos sulčių' },
+      { amount: '1 šaukštelis', name: 'medaus (nebūtina)' },
+      { amount: 'pagal skonį', name: 'druska, pipirai, džiovintas raudonėlis' },
+    ],
+    steps: [
+      'Įkaitinkite orkaitę iki 200 °C. Skardą išklokite kepimo popieriumi.',
+      'Brokolius padalinkite į žiedynus, cukiniją ir papriką supjaustykite stambiais gabaliukais. Daržoves sumaišykite su 1 v. š. aliejaus, druska, pipirais ir raudonėliu.',
+      'Sudėkite daržoves ant skardos ir kepkite 10 minučių, kad jos pradėtų minkštėti.',
+      'Kol daržovės kepa, lašišą nusausinkite popieriniu rankšluosčiu. Sumaišykite likusį aliejų su citrinos sultimis, smulkintu česnaku, medumi, druska ir pipirais. Šiuo mišiniu aptepkite žuvį.',
+      'Išimkite skardą, pastumkite daržoves į šonus ir įdėkite lašišos filė oda žemyn. Kepkite dar 12–15 min., kol žuvis lengvai skyla šakute, o daržovės apskrunda.',
+      'Patiekite lašišą kartu su keptomis daržovėmis. Jei norite, papildomai apšlakstykite citrinos sultimis.',
+    ],
   },
 ]
 

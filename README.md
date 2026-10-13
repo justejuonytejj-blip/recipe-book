@@ -19,13 +19,12 @@ Tai internetinė aplikacija, kurioje vartotojai galės užsiregistruoti, prisiju
 
 Jau veikiančios funkcijos:
 
-- Receptų peržiūra – paspaudus ant „Kreminiai makaronai su grybais“ kortelės atsidaro modalinis recepto langas su ingredientais ir gaminimo instrukcija (vietiniai pavyzdiniai duomenys).
+- Receptų peržiūra – paspaudus ant bet kurios iš trijų receptų kortelių atsidaro bendras modalinis recepto langas su ingredientais ir gaminimo instrukcija (vietiniai pavyzdiniai duomenys).
 
 Planuojamos funkcijos:
 
 - Registracija ir prisijungimas.
 - Receptų pridėjimas.
-- Kitų receptų peržiūra.
 - Receptų redagavimas.
 - Receptų ištrynimas.
 - Receptų saugojimas Supabase duomenų bazėje.
@@ -51,7 +50,7 @@ npm run dev
 
 - Sukurtas React + Vite projektas.
 - Sukurtas pradinis „Recipe Book“ svetainės dizainas.
-- Įgyvendinta vieno pavyzdinio recepto („Kreminiai makaronai su grybais“) peržiūra modaliniame lange.
+- Įgyvendinta visų trijų pavyzdinių receptų peržiūra bendrame modaliniame lange.
 - Registracija ir prisijungimas dar neįgyvendinti.
 - Supabase duomenų bazė dar neprijungta.
 - Receptų pridėjimas, redagavimas ir ištrynimas dar neįgyvendinti.
