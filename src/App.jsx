@@ -319,6 +319,12 @@ function Icon({ name }) {
         <path d="m6 6 12 12M18 6 6 18" strokeLinecap="round" />
       </svg>
     ),
+    edit: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M12 20h9" strokeLinecap="round" />
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" strokeLinejoin="round" />
+      </svg>
+    ),
   }
 
   return <span className="icon">{icons[name]}</span>
@@ -335,7 +341,13 @@ function Stars({ rating }) {
   )
 }
 
-function RecipeModal({ recipe, onClose }) {
+function serializeIngredients(ingredients) {
+  return ingredients
+    .map((item) => (item.amount ? `${item.amount} ${item.name}` : item.name))
+    .join('\n')
+}
+
+function RecipeModal({ recipe, onClose, onEdit }) {
   useEffect(() => {
     const onKeyDown = (event) => {
       if (event.key === 'Escape') onClose()
@@ -426,19 +438,36 @@ function RecipeModal({ recipe, onClose }) {
             </ol>
           </section>
 
-          <button type="button" className="btn btn-primary modal-close-btn" onClick={onClose}>
-            Uždaryti
-          </button>
+          <div className="modal-actions">
+            {recipe.isUserRecipe && (
+              <button
+                type="button"
+                className="btn btn-outline modal-action-btn"
+                onClick={() => onEdit(recipe)}
+              >
+                <Icon name="edit" />
+                Redaguoti
+              </button>
+            )}
+            <button type="button" className="btn btn-primary modal-action-btn" onClick={onClose}>
+              Uždaryti
+            </button>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-function AddRecipeModal({ onClose, onSave }) {
-  const [title, setTitle] = useState('')
-  const [ingredientsText, setIngredientsText] = useState('')
-  const [instructionsText, setInstructionsText] = useState('')
+function RecipeFormModal({ recipe = null, onClose, onSave }) {
+  const isEdit = Boolean(recipe)
+  const [title, setTitle] = useState(recipe?.title ?? '')
+  const [ingredientsText, setIngredientsText] = useState(
+    recipe ? serializeIngredients(recipe.ingredients) : '',
+  )
+  const [instructionsText, setInstructionsText] = useState(
+    recipe ? recipe.steps.join('\n') : '',
+  )
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -469,14 +498,18 @@ function AddRecipeModal({ onClose, onSave }) {
     }
 
     onSave({
-      id: `user-${Date.now()}`,
+      ...(recipe ?? {
+        image: RECIPE_PLACEHOLDER,
+        tag: 'Mano receptas',
+        openable: true,
+        isUserRecipe: true,
+      }),
+      id: recipe?.id ?? `user-${Date.now()}`,
       title: trimmedTitle,
-      tag: 'Mano receptas',
-      image: RECIPE_PLACEHOLDER,
-      openable: true,
       ingredients,
       steps,
       isUserRecipe: true,
+      openable: true,
     })
   }
 
@@ -486,7 +519,7 @@ function AddRecipeModal({ onClose, onSave }) {
         className="modal modal-form"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="add-recipe-title"
+        aria-labelledby="recipe-form-title"
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -499,9 +532,13 @@ function AddRecipeModal({ onClose, onSave }) {
         </button>
 
         <form className="modal-body add-recipe-form" onSubmit={handleSubmit}>
-          <h2 id="add-recipe-title">Pridėti receptą</h2>
+          <h2 id="recipe-form-title">
+            {isEdit ? 'Redaguoti receptą' : 'Pridėti receptą'}
+          </h2>
           <p className="form-lead">
-            Užpildykite privalomus laukus. Ingredientus ir instrukciją rašykite po vieną eilutę.
+            {isEdit
+              ? 'Pakeiskite recepto duomenis. Ingredientus ir instrukciją rašykite po vieną eilutę.'
+              : 'Užpildykite privalomus laukus. Ingredientus ir instrukciją rašykite po vieną eilutę.'}
           </p>
 
           {error && (
@@ -555,7 +592,7 @@ function AddRecipeModal({ onClose, onSave }) {
               Atšaukti
             </button>
             <button type="submit" className="btn btn-primary form-btn">
-              Išsaugoti
+              {isEdit ? 'Išsaugoti pakeitimus' : 'Išsaugoti'}
             </button>
           </div>
         </form>
@@ -570,6 +607,7 @@ function App() {
   const [query, setQuery] = useState('')
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
+  const [editingRecipe, setEditingRecipe] = useState(null)
   const [userRecipes, setUserRecipes] = useState(() => loadUserRecipes())
 
   const recipes = [...SAMPLE_RECIPES, ...userRecipes]
@@ -588,11 +626,30 @@ function App() {
     setSelectedRecipe(recipe)
   }
 
+  const closeRecipeForm = () => {
+    setIsAddOpen(false)
+    setEditingRecipe(null)
+  }
+
+  const handleEditRecipe = (recipe) => {
+    setSelectedRecipe(null)
+    setIsAddOpen(false)
+    setEditingRecipe(recipe)
+  }
+
   const handleSaveRecipe = (recipe) => {
-    const nextUserRecipes = [...userRecipes, recipe]
+    const isEdit = userRecipes.some((item) => item.id === recipe.id)
+    const nextUserRecipes = isEdit
+      ? userRecipes.map((item) => (item.id === recipe.id ? recipe : item))
+      : [...userRecipes, recipe]
+
     setUserRecipes(nextUserRecipes)
     saveUserRecipes(nextUserRecipes)
-    setIsAddOpen(false)
+    closeRecipeForm()
+
+    if (isEdit) {
+      setSelectedRecipe(recipe)
+    }
   }
 
   const filteredRecipes = filterRecipesByTitle(recipes, query)
@@ -820,12 +877,14 @@ function App() {
         <RecipeModal
           recipe={selectedRecipe}
           onClose={() => setSelectedRecipe(null)}
+          onEdit={handleEditRecipe}
         />
       )}
 
-      {isAddOpen && (
-        <AddRecipeModal
-          onClose={() => setIsAddOpen(false)}
+      {(isAddOpen || editingRecipe) && (
+        <RecipeFormModal
+          recipe={editingRecipe}
+          onClose={closeRecipeForm}
           onSave={handleSaveRecipe}
         />
       )}
