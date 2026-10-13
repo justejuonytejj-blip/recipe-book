@@ -51,3 +51,13 @@
 2. Trumpai paaiškink, ką pakeitei.
 3. Sustok ir palauk mano patvirtinimo arba kitos užduoties.
 4. Commit ir branch kurk tik tada, kai to aiškiai paprašysiu.
+
+## README.md automatinis atnaujinimas
+1. Po kiekvienos užbaigtos programavimo užduoties patikrink, ar reikia atnaujinti README.md.
+2. Jeigu pridėta nauja funkcija, pakeista technologija, projekto struktūra ar įgyvendinimo būsena, automatiškai atnaujink atitinkamą README.md skyrių.
+3. Aiškiai atskirk jau veikiančias funkcijas nuo planuojamų.
+4. Jeigu atliktas tik nedidelis vizualinis pakeitimas, kuris nekeičia projekto funkcionalumo, README.md keisti nereikia.
+5. Netrink ankstesnės svarbios dokumentacijos ir nedubliuok informacijos.
+6. Po užduoties trumpai nurodyk, ar README.md buvo atnaujintas.
+7. README.md atnaujinimą įtrauk į tos pačios užduoties pakeitimus, kad galėčiau viską išsaugoti vienu Commit.
+8. Nedaryk Commit ar Push automatiškai.
