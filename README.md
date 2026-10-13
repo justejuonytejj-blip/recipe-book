@@ -22,6 +22,7 @@ Jau veikiančios funkcijos:
 - Receptų peržiūra – paspaudus ant bet kurios iš trijų receptų kortelių atsidaro bendras modalinis recepto langas su ingredientais ir gaminimo instrukcija (vietiniai pavyzdiniai duomenys).
 - Receptų paieška pagal pavadinimą – filtruoja bendrą receptų sąrašą realiu laiku (nepriklausomai nuo raidžių dydžio, lietuviškų diakritikų ir dažnų žodžių formų; paruošta naudoti su vėliau iš Supabase gaunamais receptais).
 - Receptų pridėjimas – forma modaliniame lange; nauji receptai laikinai saugomi naršyklės `localStorage` (ne Supabase).
+- Automatinis naujo recepto nuotraukos priskyrimas pagal pavadinimo raktažodžius (nuotraukos `public/recipes/`).
 - Vartotojo pridėtų receptų redagavimas – peržiūros lange mygtukas „Redaguoti“; pakeitimai saugomi `localStorage`.
 
 Planuojamos funkcijos:
@@ -54,6 +55,7 @@ npm run dev
 - Įgyvendinta visų trijų pavyzdinių receptų peržiūra bendrame modaliniame lange.
 - Įgyvendinta veikianti receptų paieška pagal pavadinimą (su lietuviškų raidžių, galūnių ir y/i variantų normalizavimu).
 - Įgyvendintas naujo recepto pridėjimas su `localStorage` saugojimu (Supabase dar nenaudojama).
+- Naujiems receptams automatiškai priskiriama nuotrauka pagal pavadinimo raktažodžius.
 - Įgyvendintas vartotojo pridėtų receptų redagavimas su `localStorage` saugojimu.
 - Registracija ir prisijungimas dar neįgyvendinti.
 - Supabase duomenų bazė dar neprijungta.

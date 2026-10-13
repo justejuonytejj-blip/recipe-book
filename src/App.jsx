@@ -2,7 +2,53 @@ import { useEffect, useState } from 'react'
 import './App.css'
 
 const STORAGE_KEY = 'recipe-book-user-recipes'
-const RECIPE_PLACEHOLDER = '/recipe-placeholder.svg'
+
+const RECIPE_IMAGES = {
+  pasta: '/recipes/pasta.jpg',
+  breakfast: '/recipes/breakfast.jpg',
+  dinner: '/recipes/dinner.jpg',
+  dessert: '/recipes/dessert.jpg',
+  default: '/recipes/default.jpg',
+}
+
+/**
+ * Pagal pavadinimo raktažodžius parenka numatytą recepto nuotrauką.
+ * Veikia ir be lietuviškų raidžių (naudoja normalizuotą tekstą).
+ */
+function getRecipeImageByTitle(title) {
+  const normalized = normalizeSearchText(title)
+
+  if (
+    normalized.includes('makaron') ||
+    normalized.includes('pasta')
+  ) {
+    return RECIPE_IMAGES.pasta
+  }
+
+  if (
+    normalized.includes('avokad') ||
+    normalized.includes('kiausin')
+  ) {
+    return RECIPE_IMAGES.breakfast
+  }
+
+  if (
+    normalized.includes('lasis') ||
+    normalized.includes('zuvis')
+  ) {
+    return RECIPE_IMAGES.dinner
+  }
+
+  if (
+    normalized.includes('pirag') ||
+    normalized.includes('sokolad') ||
+    normalized.includes('desert')
+  ) {
+    return RECIPE_IMAGES.dessert
+  }
+
+  return RECIPE_IMAGES.default
+}
 
 const SAMPLE_RECIPES = [
   {
@@ -499,7 +545,6 @@ function RecipeFormModal({ recipe = null, onClose, onSave }) {
 
     onSave({
       ...(recipe ?? {
-        image: RECIPE_PLACEHOLDER,
         tag: 'Mano receptas',
         openable: true,
         isUserRecipe: true,
@@ -508,6 +553,8 @@ function RecipeFormModal({ recipe = null, onClose, onSave }) {
       title: trimmedTitle,
       ingredients,
       steps,
+      // Naujiems receptams nuotrauka parenkama automatiškai; redaguojant paliekama esama.
+      image: recipe?.image ?? getRecipeImageByTitle(trimmedTitle),
       isUserRecipe: true,
       openable: true,
     })
