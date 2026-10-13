@@ -92,20 +92,9 @@ const recipes = [
   },
 ]
 
-const categories = [
-  { id: 'breakfast', label: 'Pusryčiai', icon: 'coffee' },
-  { id: 'lunch', label: 'Pietūs', icon: 'utensils' },
-  { id: 'dinner', label: 'Vakarienė', icon: 'bowl' },
-  { id: 'snacks', label: 'Užkandžiai', icon: 'leaf' },
-  { id: 'desserts', label: 'Desertai', icon: 'cupcake' },
-  { id: 'healthy', label: 'Sveika mityba', icon: 'heart' },
-]
-
 const navLinks = [
   { href: '#', label: 'Pagrindinis', active: true },
   { href: '#receptai', label: 'Mano receptai' },
-  { href: '#kategorijos', label: 'Kategorijos' },
-  { href: '#apie', label: 'Apie' },
 ]
 
 function LeafLogo() {
@@ -189,39 +178,6 @@ function Icon({ name }) {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21.5V5.5Z" />
         <path d="M5 21.5A2.5 2.5 0 0 1 7.5 19H19" />
-      </svg>
-    ),
-    coffee: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <path d="M5 9h11v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V9Z" />
-        <path d="M16 10h2.5a2.5 2.5 0 0 1 0 5H16" />
-        <path d="M8 3v2M11 2v3M14 3v2" strokeLinecap="round" />
-      </svg>
-    ),
-    utensils: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <path d="M8 3v7a2 2 0 0 1-2 2v9" strokeLinecap="round" />
-        <path d="M8 3c0 0 .5 3 0 5M6 3v5M10 3v5" strokeLinecap="round" />
-        <path d="M16 3v18M16 3c2.5 0 4 2 4 5v2h-4" strokeLinecap="round" />
-      </svg>
-    ),
-    bowl: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <path d="M4 11h16a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6Z" />
-        <path d="M9 5c.5 1.5.5 3 0 4M12 4c.5 1.5.5 3 0 4M15 5c.5 1.5.5 3 0 4" strokeLinecap="round" />
-      </svg>
-    ),
-    leaf: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <path d="M5 19c8-1 12-7 13-14-7 1-13 5-13 14Z" />
-        <path d="M5 19c3-4 7-7 12-9" strokeLinecap="round" />
-      </svg>
-    ),
-    cupcake: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <path d="M8 11h8l-1 8H9l-1-8Z" />
-        <path d="M7 11c0-3 2-5 5-5s5 2 5 5" />
-        <circle cx="12" cy="5" r="1.2" fill="currentColor" stroke="none" />
       </svg>
     ),
     close: (
@@ -531,41 +487,6 @@ function App() {
             </div>
           </div>
         </section>
-
-        <section className="section categories-section" id="kategorijos">
-          <div className="container">
-            <div className="section-header">
-              <h2>Kategorijos</h2>
-            </div>
-
-            <div className="category-grid">
-              {categories.map((category, index) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  className="category-card"
-                  style={{ animationDelay: `${index * 60}ms` }}
-                >
-                  <span className="category-icon">
-                    <Icon name={category.icon} />
-                  </span>
-                  <span className="category-label">{category.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="section about-section" id="apie">
-          <div className="container about-inner">
-            <h2>Apie Recipe Book</h2>
-            <p>
-              Tai tavo asmeninė virtuvės erdvė — vieta, kurioje receptai
-              surenkami, atrandami ir dalijami. Pradėk nuo mėgstamiausių
-              patiekalų ir leisk kolekcijai augti kartu su tavimi.
-            </p>
-          </div>
-        </section>
       </main>
 
       <footer className="footer">
@@ -587,7 +508,7 @@ function App() {
           <Icon name="book" />
           <span>Receptai</span>
         </a>
-        <a href="#apie">
+        <a href="#">
           <Icon name="user" />
           <span>Profilis</span>
         </a>

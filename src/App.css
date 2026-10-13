@@ -487,78 +487,8 @@
   font-weight: 500;
 }
 
-/* —— Categories —— */
-.categories-section {
+.recipes-section {
   padding-bottom: 3rem;
-}
-
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.85rem;
-}
-
-.category-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.7rem;
-  min-height: 6.5rem;
-  padding: 1.1rem 0.5rem;
-  background: var(--sand-soft);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-  animation: fadeUp 0.5s ease both;
-}
-
-.category-card:hover {
-  background: var(--sand);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-}
-
-.category-icon {
-  display: inline-flex;
-  color: var(--olive);
-}
-
-.category-icon .icon {
-  width: 1.65rem;
-  height: 1.65rem;
-}
-
-.category-label {
-  font-size: 0.82rem;
-  font-weight: 500;
-  text-align: center;
-  line-height: 1.25;
-}
-
-/* —— About —— */
-.about-section {
-  padding: 1rem 0 4rem;
-}
-
-.about-inner {
-  max-width: 36rem;
-  padding: 2rem 0;
-}
-
-.about-inner h2 {
-  font-size: clamp(1.75rem, 3vw, 2.15rem);
-  margin-bottom: 0.85rem;
-}
-
-.about-inner p {
-  margin: 0;
-  color: var(--text-muted);
-  font-weight: 300;
-  line-height: 1.7;
 }
 
 /* —— Footer —— */
@@ -692,14 +622,6 @@
   .recipe-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-
-  .category-grid {
-    grid-template-columns: repeat(6, 1fr);
-  }
-
-  .category-card {
-    min-height: 7.25rem;
-  }
 }
 
 /* —— Desktop —— */
@@ -753,15 +675,12 @@
 
   .recipes-section {
     padding-top: 1rem;
+    padding-bottom: 4rem;
   }
 
   .recipe-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
-  }
-
-  .categories-section {
-    padding-bottom: 4.5rem;
   }
 
   .footer {
