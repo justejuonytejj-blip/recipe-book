@@ -1,6 +1,64 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { supabase } from './lib/supabase.js'
 import './App.css'
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const MIN_PASSWORD_LENGTH = 6
+
+function translateSignUpError(error) {
+  const message = (error?.message || '').toLowerCase()
+
+  if (
+    message.includes('already registered') ||
+    message.includes('already been registered') ||
+    message.includes('user already exists')
+  ) {
+    return 'Šis el. paštas jau užregistruotas.'
+  }
+
+  if (
+    message.includes('password') &&
+    (message.includes('least') ||
+      message.includes('short') ||
+      message.includes('weak') ||
+      message.includes('characters'))
+  ) {
+    return `Slaptažodis neatitinka saugumo reikalavimų. Naudokite bent ${MIN_PASSWORD_LENGTH} simbolius.`
+  }
+
+  if (message.includes('invalid') && message.includes('email')) {
+    return 'Neteisingas el. pašto formatas.'
+  }
+
+  if (message.includes('rate limit') || message.includes('too many')) {
+    return 'Per daug bandymų. Bandykite vėliau.'
+  }
+
+  return 'Registracija nepavyko. Patikrinkite duomenis ir bandykite dar kartą.'
+}
+
+function translateSignInError(error) {
+  const message = (error?.message || '').toLowerCase()
+
+  if (message.includes('email not confirmed')) {
+    return 'El. paštas dar nepatvirtintas. Patikrinkite savo pašto dėžutę.'
+  }
+
+  if (
+    message.includes('invalid login') ||
+    message.includes('invalid credentials') ||
+    message.includes('invalid email or password')
+  ) {
+    return 'Neteisingas el. paštas arba slaptažodis.'
+  }
+
+  if (message.includes('rate limit') || message.includes('too many')) {
+    return 'Per daug bandymų. Bandykite vėliau.'
+  }
+
+  return 'Prisijungti nepavyko. Patikrinkite duomenis ir bandykite dar kartą.'
+}
 
 const STORAGE_KEY = 'recipe-book-user-recipes'
 
@@ -727,6 +785,357 @@ function RecipeFormModal({ recipe = null, onClose, onSave }) {
   )
 }
 
+function RegisterModal({ onClose, onSuccessToast }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape' && !isSubmitting) onClose()
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [onClose, isSubmitting])
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setError('')
+    setInfo('')
+
+    const trimmedEmail = email.trim()
+
+    if (!trimmedEmail || !password || !confirmPassword) {
+      setError('Užpildykite visus privalomus laukus.')
+      return
+    }
+
+    if (!EMAIL_PATTERN.test(trimmedEmail)) {
+      setError('Įveskite teisingą el. pašto adresą.')
+      return
+    }
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(
+        `Slaptažodis turi būti bent ${MIN_PASSWORD_LENGTH} simbolių ilgio.`,
+      )
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('Slaptažodžiai nesutampa.')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password,
+      })
+
+      if (signUpError) {
+        setError(translateSignUpError(signUpError))
+        return
+      }
+
+      if (data.session) {
+        onSuccessToast('Registracija sėkminga!')
+        onClose()
+        return
+      }
+
+      setInfo('Patikrinkite savo el. paštą ir patvirtinkite registraciją')
+      setPassword('')
+      setConfirmPassword('')
+    } catch {
+      setError('Registracija nepavyko. Bandykite dar kartą.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      onClick={() => {
+        if (!isSubmitting) onClose()
+      }}
+    >
+      <div
+        className="modal modal-form"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="register-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="modal-close-icon"
+          aria-label="Uždaryti"
+          onClick={() => {
+            if (!isSubmitting) onClose()
+          }}
+          disabled={isSubmitting}
+        >
+          <Icon name="close" />
+        </button>
+
+        <form className="modal-body add-recipe-form" onSubmit={handleSubmit}>
+          <h2 id="register-title">Registruotis</h2>
+          <p className="form-lead">
+            Sukurkite paskyrą su el. paštu ir slaptažodžiu. Autentifikaciją tvarko
+            Supabase Auth.
+          </p>
+
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+
+          {info && (
+            <p className="form-success" role="status">
+              {info}
+            </p>
+          )}
+
+          <label className="form-field">
+            <span>El. paštas *</span>
+            <input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value)
+                setError('')
+                setInfo('')
+              }}
+              placeholder="pvz. vardas@pastas.lt"
+              disabled={isSubmitting}
+              autoFocus
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Slaptažodis *</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value)
+                setError('')
+                setInfo('')
+              }}
+              placeholder={`Bent ${MIN_PASSWORD_LENGTH} simboliai`}
+              disabled={isSubmitting}
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Pakartoti slaptažodį *</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(event) => {
+                setConfirmPassword(event.target.value)
+                setError('')
+                setInfo('')
+              }}
+              placeholder="Pakartokite slaptažodį"
+              disabled={isSubmitting}
+            />
+          </label>
+
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn btn-outline form-btn"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Atšaukti
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary form-btn"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Registruojama...' : 'Registruotis'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function LoginModal({ onClose, onSuccessToast }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape' && !isSubmitting) onClose()
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [onClose, isSubmitting])
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setError('')
+
+    const trimmedEmail = email.trim()
+
+    if (!trimmedEmail || !password) {
+      setError('Užpildykite visus privalomus laukus.')
+      return
+    }
+
+    if (!EMAIL_PATTERN.test(trimmedEmail)) {
+      setError('Įveskite teisingą el. pašto adresą.')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      })
+
+      if (signInError) {
+        setError(translateSignInError(signInError))
+        return
+      }
+
+      onSuccessToast('Sėkmingai prisijungėte!')
+      onClose()
+    } catch {
+      setError('Prisijungti nepavyko. Bandykite dar kartą.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      onClick={() => {
+        if (!isSubmitting) onClose()
+      }}
+    >
+      <div
+        className="modal modal-form"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="login-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="modal-close-icon"
+          aria-label="Uždaryti"
+          onClick={() => {
+            if (!isSubmitting) onClose()
+          }}
+          disabled={isSubmitting}
+        >
+          <Icon name="close" />
+        </button>
+
+        <form className="modal-body add-recipe-form" onSubmit={handleSubmit}>
+          <h2 id="login-title">Prisijungti</h2>
+          <p className="form-lead">
+            Įveskite savo el. paštą ir slaptažodį. Sesiją tvarko Supabase Auth.
+          </p>
+
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+
+          <label className="form-field">
+            <span>El. paštas *</span>
+            <input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value)
+                setError('')
+              }}
+              placeholder="pvz. vardas@pastas.lt"
+              disabled={isSubmitting}
+              autoFocus
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Slaptažodis *</span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value)
+                setError('')
+              }}
+              placeholder="Jūsų slaptažodis"
+              disabled={isSubmitting}
+            />
+          </label>
+
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn btn-outline form-btn"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Atšaukti
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary form-btn"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Jungiamasi...' : 'Prisijungti'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [favorites, setFavorites] = useState(new Set())
@@ -734,8 +1143,25 @@ function App() {
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [editingRecipe, setEditingRecipe] = useState(null)
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false)
+  const [isLoginOpen, setIsLoginOpen] = useState(false)
+  const [user, setUser] = useState(null)
+  const [authReady, setAuthReady] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [userRecipes, setUserRecipes] = useState(() => loadUserRecipes())
   const [toastMessage, setToastMessage] = useState('')
+
+  const openRegister = () => {
+    setMenuOpen(false)
+    setIsLoginOpen(false)
+    setIsRegisterOpen(true)
+  }
+
+  const openLogin = () => {
+    setMenuOpen(false)
+    setIsRegisterOpen(false)
+    setIsLoginOpen(true)
+  }
 
   const recipes = [...SAMPLE_RECIPES, ...userRecipes]
 
@@ -744,6 +1170,46 @@ function App() {
     const timer = window.setTimeout(() => setToastMessage(''), 2800)
     return () => window.clearTimeout(timer)
   }, [toastMessage])
+
+  useEffect(() => {
+    let isMounted = true
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!isMounted) return
+      setUser(data.session?.user ?? null)
+      setAuthReady(true)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return
+      setUser(session?.user ?? null)
+      setAuthReady(true)
+    })
+
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        setToastMessage('Atsijungti nepavyko. Bandykite dar kartą.')
+        return
+      }
+      setMenuOpen(false)
+      setToastMessage('Sėkmingai atsijungėte.')
+    } catch {
+      setToastMessage('Atsijungti nepavyko. Bandykite dar kartą.')
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
 
   const toggleFavorite = (id) => {
     setFavorites((prev) => {
@@ -822,12 +1288,31 @@ function App() {
             <button type="button" className="icon-btn search-btn" aria-label="Ieškoti">
               <Icon name="search" />
             </button>
-            <button type="button" className="btn btn-outline">
-              Prisijungti
-            </button>
-            <button type="button" className="btn btn-primary">
-              Registruotis
-            </button>
+            {authReady &&
+              (user ? (
+                <>
+                  <span className="user-email" title={user.email}>
+                    {user.email}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                  >
+                    {isLoggingOut ? 'Atsijungiama...' : 'Atsijungti'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="btn btn-outline" onClick={openLogin}>
+                    Prisijungti
+                  </button>
+                  <button type="button" className="btn btn-primary" onClick={openRegister}>
+                    Registruotis
+                  </button>
+                </>
+              ))}
             <button
               type="button"
               className="icon-btn menu-btn"
@@ -853,12 +1338,29 @@ function App() {
               </a>
             ))}
             <div className="nav-mobile-actions">
-              <button type="button" className="btn btn-outline">
-                Prisijungti
-              </button>
-              <button type="button" className="btn btn-primary">
-                Registruotis
-              </button>
+              {authReady &&
+                (user ? (
+                  <>
+                    <p className="user-email user-email-mobile">{user.email}</p>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                    >
+                      {isLoggingOut ? 'Atsijungiama...' : 'Atsijungti'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" className="btn btn-outline" onClick={openLogin}>
+                      Prisijungti
+                    </button>
+                    <button type="button" className="btn btn-primary" onClick={openRegister}>
+                      Registruotis
+                    </button>
+                  </>
+                ))}
             </div>
           </nav>
         )}
@@ -1030,6 +1532,20 @@ function App() {
           recipe={editingRecipe}
           onClose={closeRecipeForm}
           onSave={handleSaveRecipe}
+        />
+      )}
+
+      {isRegisterOpen && (
+        <RegisterModal
+          onClose={() => setIsRegisterOpen(false)}
+          onSuccessToast={setToastMessage}
+        />
+      )}
+
+      {isLoginOpen && (
+        <LoginModal
+          onClose={() => setIsLoginOpen(false)}
+          onSuccessToast={setToastMessage}
         />
       )}
 
