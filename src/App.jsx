@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import './App.css'
 
 const STORAGE_KEY = 'recipe-book-user-recipes'
@@ -244,7 +245,14 @@ function loadUserRecipes() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    if (!Array.isArray(parsed)) return []
+    // Užtikriname, kad seni įrašai turėtų reikalingas žymas ištrynimui/redagavimui.
+    return parsed.map((recipe) => ({
+      ...recipe,
+      id: recipe.id,
+      isUserRecipe: true,
+      openable: true,
+    }))
   } catch {
     return []
   }
@@ -371,6 +379,14 @@ function Icon({ name }) {
         <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" strokeLinejoin="round" />
       </svg>
     ),
+    trash: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M4 7h16" strokeLinecap="round" />
+        <path d="M10 11v6M14 11v6" strokeLinecap="round" />
+        <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" strokeLinejoin="round" />
+        <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" strokeLinejoin="round" />
+      </svg>
+    ),
   }
 
   return <span className="icon">{icons[name]}</span>
@@ -393,10 +409,14 @@ function serializeIngredients(ingredients) {
     .join('\n')
 }
 
-function RecipeModal({ recipe, onClose, onEdit }) {
+function RecipeModal({ recipe, onClose, onEdit, onDelete }) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
   useEffect(() => {
     const onKeyDown = (event) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key !== 'Escape') return
+      if (confirmDelete) setConfirmDelete(false)
+      else onClose()
     }
 
     document.addEventListener('keydown', onKeyDown)
@@ -407,13 +427,18 @@ function RecipeModal({ recipe, onClose, onEdit }) {
       document.removeEventListener('keydown', onKeyDown)
       document.body.style.overflow = previousOverflow
     }
-  }, [onClose])
+  }, [onClose, confirmDelete])
 
   return (
     <div
       className="modal-backdrop"
       role="presentation"
-      onClick={onClose}
+      onClick={() => {
+        // Kol atidarytas ištrynimo patvirtinimas, neuždaryti recepto modalų
+        // (portalo įvykiai React medyje kyla iki backdrop).
+        if (confirmDelete) return
+        onClose()
+      }}
     >
       <div
         className="modal"
@@ -486,14 +511,27 @@ function RecipeModal({ recipe, onClose, onEdit }) {
 
           <div className="modal-actions">
             {recipe.isUserRecipe && (
-              <button
-                type="button"
-                className="btn btn-outline modal-action-btn"
-                onClick={() => onEdit(recipe)}
-              >
-                <Icon name="edit" />
-                Redaguoti
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="btn btn-outline modal-action-btn"
+                  onClick={() => onEdit(recipe)}
+                >
+                  <Icon name="edit" />
+                  Redaguoti
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger modal-action-btn"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setConfirmDelete(true)
+                  }}
+                >
+                  <Icon name="trash" />
+                  Ištrinti
+                </button>
+              </>
             )}
             <button type="button" className="btn btn-primary modal-action-btn" onClick={onClose}>
               Uždaryti
@@ -501,6 +539,47 @@ function RecipeModal({ recipe, onClose, onEdit }) {
           </div>
         </div>
       </div>
+
+      {confirmDelete &&
+        createPortal(
+          <div
+            className="confirm-overlay"
+            role="presentation"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div
+              className="confirm-dialog"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="confirm-delete-title"
+              aria-describedby="confirm-delete-text"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <h3 id="confirm-delete-title">Ištrinti receptą</h3>
+              <p id="confirm-delete-text">Ar tikrai norite ištrinti šį receptą?</p>
+              <div className="confirm-actions">
+                <button
+                  type="button"
+                  className="btn btn-outline form-btn"
+                  onClick={() => setConfirmDelete(false)}
+                >
+                  Atšaukti
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger form-btn"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onDelete(recipe.id)
+                  }}
+                >
+                  Taip, ištrinti
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
@@ -656,8 +735,15 @@ function App() {
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [editingRecipe, setEditingRecipe] = useState(null)
   const [userRecipes, setUserRecipes] = useState(() => loadUserRecipes())
+  const [toastMessage, setToastMessage] = useState('')
 
   const recipes = [...SAMPLE_RECIPES, ...userRecipes]
+
+  useEffect(() => {
+    if (!toastMessage) return undefined
+    const timer = window.setTimeout(() => setToastMessage(''), 2800)
+    return () => window.clearTimeout(timer)
+  }, [toastMessage])
 
   const toggleFavorite = (id) => {
     setFavorites((prev) => {
@@ -697,6 +783,16 @@ function App() {
     if (isEdit) {
       setSelectedRecipe(recipe)
     }
+  }
+
+  const handleDeleteRecipe = (recipeId) => {
+    setUserRecipes((prev) => {
+      const nextUserRecipes = prev.filter((item) => String(item.id) !== String(recipeId))
+      saveUserRecipes(nextUserRecipes)
+      return nextUserRecipes
+    })
+    setSelectedRecipe(null)
+    setToastMessage('Receptas sėkmingai ištrintas')
   }
 
   const filteredRecipes = filterRecipesByTitle(recipes, query)
@@ -925,6 +1021,7 @@ function App() {
           recipe={selectedRecipe}
           onClose={() => setSelectedRecipe(null)}
           onEdit={handleEditRecipe}
+          onDelete={handleDeleteRecipe}
         />
       )}
 
@@ -934,6 +1031,12 @@ function App() {
           onClose={closeRecipeForm}
           onSave={handleSaveRecipe}
         />
+      )}
+
+      {toastMessage && (
+        <div className="toast" role="status" aria-live="polite">
+          {toastMessage}
+        </div>
       )}
     </div>
   )

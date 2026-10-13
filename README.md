@@ -24,11 +24,11 @@ Jau veikiančios funkcijos:
 - Receptų pridėjimas – forma modaliniame lange; nauji receptai laikinai saugomi naršyklės `localStorage` (ne Supabase).
 - Automatinis naujo recepto nuotraukos priskyrimas pagal pavadinimo raktažodžius (nuotraukos `public/recipes/`).
 - Vartotojo pridėtų receptų redagavimas – peržiūros lange mygtukas „Redaguoti“; pakeitimai saugomi `localStorage`.
+- Vartotojo pridėtų receptų ištrynimas – su patvirtinimo langu; pašalinimas iš sąrašo ir `localStorage`.
 
 Planuojamos funkcijos:
 
 - Registracija ir prisijungimas.
-- Receptų ištrynimas.
 - Receptų saugojimas Supabase duomenų bazėje.
 - Kiekvienas vartotojas matys tik savo receptus.
 
@@ -57,6 +57,6 @@ npm run dev
 - Įgyvendintas naujo recepto pridėjimas su `localStorage` saugojimu (Supabase dar nenaudojama).
 - Naujiems receptams automatiškai priskiriama nuotrauka pagal pavadinimo raktažodžius.
 - Įgyvendintas vartotojo pridėtų receptų redagavimas su `localStorage` saugojimu.
+- Įgyvendintas vartotojo pridėtų receptų ištrynimas su patvirtinimu ir `localStorage` atnaujinimu.
 - Registracija ir prisijungimas dar neįgyvendinti.
 - Supabase duomenų bazė dar neprijungta.
-- Receptų ištrynimas dar neįgyvendintas.
