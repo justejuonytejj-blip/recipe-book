@@ -1805,8 +1805,7 @@ function App() {
                   </p>
                   <h1 className="my-recipes-title">Mano receptai</h1>
                   <p className="my-recipes-lead">
-                    Čia saugomi tavo receptai. Prisijungus jie sinchronizuojami
-                    per Supabase.
+                    Visi tavo mėgstamiausi receptai vienoje vietoje.
                   </p>
                 </div>
 
