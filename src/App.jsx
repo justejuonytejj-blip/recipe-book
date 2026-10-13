@@ -467,6 +467,31 @@ function serializeIngredients(ingredients) {
     .join('\n')
 }
 
+function serializeSteps(steps) {
+  return steps.join('\n')
+}
+
+/**
+ * DB saugo tik stabilias nuorodas (kelias arba http/https).
+ * blob:/data: ir tuščias reikšmes pakeičia numatytąja nuotrauka.
+ */
+function toStorableImageUrl(image) {
+  if (!image || typeof image !== 'string') {
+    return RECIPE_IMAGES.default
+  }
+
+  const trimmed = image.trim()
+  if (
+    !trimmed ||
+    trimmed.startsWith('blob:') ||
+    trimmed.startsWith('data:')
+  ) {
+    return RECIPE_IMAGES.default
+  }
+
+  return trimmed
+}
+
 function mapSupabaseRecipe(row) {
   return {
     id: row.id,
@@ -730,13 +755,14 @@ function RecipeFormModal({ recipe = null, onClose, onSave }) {
     recipe ? serializeIngredients(recipe.ingredients) : '',
   )
   const [instructionsText, setInstructionsText] = useState(
-    recipe ? recipe.steps.join('\n') : '',
+    recipe ? serializeSteps(recipe.steps) : '',
   )
   const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     const onKeyDown = (event) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape' && !isSubmitting) onClose()
     }
 
     document.addEventListener('keydown', onKeyDown)
@@ -747,39 +773,59 @@ function RecipeFormModal({ recipe = null, onClose, onSave }) {
       document.removeEventListener('keydown', onKeyDown)
       document.body.style.overflow = previousOverflow
     }
-  }, [onClose])
+  }, [onClose, isSubmitting])
 
-  const handleSubmit = (event) => {
+  const handleClose = () => {
+    if (isSubmitting) return
+    onClose()
+  }
+
+  const handleSubmit = async (event) => {
     event.preventDefault()
+    if (isSubmitting) return
 
     const trimmedTitle = title.trim()
     const ingredients = parseIngredientLines(ingredientsText)
     const steps = parseStepLines(instructionsText)
 
     if (!trimmedTitle || ingredients.length === 0 || steps.length === 0) {
-      setError('Užpildykite visus privalomus laukus: pavadinimą, ingredientus ir gaminimo instrukciją.')
+      setError(
+        'Užpildykite visus privalomus laukus: pavadinimą, ingredientus ir gaminimo instrukciją.',
+      )
       return
     }
 
-    onSave({
-      ...(recipe ?? {
-        tag: 'Mano receptas',
-        openable: true,
+    setIsSubmitting(true)
+    setError('')
+
+    try {
+      await onSave({
+        ...(recipe ?? {
+          tag: 'Mano receptas',
+          openable: true,
+          isUserRecipe: true,
+        }),
+        id: recipe?.id ?? `user-${Date.now()}`,
+        title: trimmedTitle,
+        ingredients,
+        steps,
+        // Naujiems receptams nuotrauka parenkama automatiškai; redaguojant paliekama esama.
+        image: recipe?.image ?? getRecipeImageByTitle(trimmedTitle),
         isUserRecipe: true,
-      }),
-      id: recipe?.id ?? `user-${Date.now()}`,
-      title: trimmedTitle,
-      ingredients,
-      steps,
-      // Naujiems receptams nuotrauka parenkama automatiškai; redaguojant paliekama esama.
-      image: recipe?.image ?? getRecipeImageByTitle(trimmedTitle),
-      isUserRecipe: true,
-      openable: true,
-    })
+        openable: true,
+      })
+    } catch (saveError) {
+      setError(
+        saveError?.message ||
+          'Nepavyko išsaugoti recepto. Bandykite dar kartą.',
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation" onClick={handleClose}>
       <div
         className="modal modal-form"
         role="dialog"
@@ -791,7 +837,8 @@ function RecipeFormModal({ recipe = null, onClose, onSave }) {
           type="button"
           className="modal-close-icon"
           aria-label="Uždaryti"
-          onClick={onClose}
+          onClick={handleClose}
+          disabled={isSubmitting}
         >
           <Icon name="close" />
         </button>
@@ -823,6 +870,7 @@ function RecipeFormModal({ recipe = null, onClose, onSave }) {
               }}
               placeholder="Pvz. Šokoladinis pyragas"
               autoFocus
+              disabled={isSubmitting}
             />
           </label>
 
@@ -836,6 +884,7 @@ function RecipeFormModal({ recipe = null, onClose, onSave }) {
                 setError('')
               }}
               placeholder={'Pvz.\n200 g miltų\n2 vnt. kiaušiniai\n100 g cukraus'}
+              disabled={isSubmitting}
             />
           </label>
 
@@ -849,15 +898,29 @@ function RecipeFormModal({ recipe = null, onClose, onSave }) {
                 setError('')
               }}
               placeholder={'Pvz.\nĮkaitinkite orkaitę.\nSumaišykite ingredientus.\nKepkite 30 min.'}
+              disabled={isSubmitting}
             />
           </label>
 
           <div className="form-actions">
-            <button type="button" className="btn btn-outline form-btn" onClick={onClose}>
+            <button
+              type="button"
+              className="btn btn-outline form-btn"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
               Atšaukti
             </button>
-            <button type="submit" className="btn btn-primary form-btn">
-              {isEdit ? 'Išsaugoti pakeitimus' : 'Išsaugoti'}
+            <button
+              type="submit"
+              className="btn btn-primary form-btn"
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? 'Saugoma...'
+                : isEdit
+                  ? 'Išsaugoti pakeitimus'
+                  : 'Išsaugoti'}
             </button>
           </div>
         </form>
@@ -1367,8 +1430,36 @@ function App() {
     setEditingRecipe(recipe)
   }
 
-  const handleSaveRecipe = (recipe) => {
+  const handleSaveRecipe = async (recipe) => {
     const isEdit = userRecipes.some((item) => item.id === recipe.id)
+
+    // Prisijungus naują receptą saugome tik Supabase (be localStorage dubliavimo).
+    if (user?.id && !isEdit) {
+      const { data, error } = await supabase
+        .from('recipes')
+        .insert({
+          user_id: user.id,
+          title: recipe.title,
+          ingredients: serializeIngredients(recipe.ingredients),
+          instructions: serializeSteps(recipe.steps),
+          image_url: toStorableImageUrl(recipe.image),
+        })
+        .select('*')
+        .single()
+
+      if (error || !data) {
+        throw new Error(
+          'Nepavyko išsaugoti recepto duomenų bazėje. Bandykite dar kartą.',
+        )
+      }
+
+      setSupabaseRecipes((prev) => [mapSupabaseRecipe(data), ...prev])
+      closeRecipeForm()
+      setToastMessage('Receptas sėkmingai išsaugotas')
+      return
+    }
+
+    // Neprisijungusiems arba redaguojant localStorage receptus – kaip anksčiau.
     const nextUserRecipes = isEdit
       ? userRecipes.map((item) => (item.id === recipe.id ? recipe : item))
       : [...userRecipes, recipe]
