@@ -12,7 +12,7 @@ Tai internetinė aplikacija, kurioje vartotojai galės užsiregistruoti, prisiju
 - JavaScript
 - Vite
 - CSS
-- Supabase (bus prijungta vėliau)
+- Supabase (klientas paruoštas; Auth ir receptų CRUD dar neprijungti)
 - GitHub
 
 ## MVP funkcionalumai
@@ -46,7 +46,12 @@ npm install
 npm run dev
 ```
 
-3. Atidarykite naršyklėje adresą, kurį parodytų Vite (dažniausiai `http://localhost:5173`).
+3. Sukurkite `.env` failą projekto šaknyje ir įrašykite:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`  
+   (`.env` failas neturi būti keliamas į Git.)
+
+4. Atidarykite naršyklėje adresą, kurį parodytų Vite (dažniausiai `http://localhost:5173`).
 
 ## Dabartinė projekto būsena
 
@@ -58,5 +63,6 @@ npm run dev
 - Naujiems receptams automatiškai priskiriama nuotrauka pagal pavadinimo raktažodžius.
 - Įgyvendintas vartotojo pridėtų receptų redagavimas su `localStorage` saugojimu.
 - Įgyvendintas vartotojo pridėtų receptų ištrynimas su patvirtinimu ir `localStorage` atnaujinimu.
+- Supabase klientas (`@supabase/supabase-js`) paruoštas per `src/lib/supabase.js`.
+- Autentifikacija ir receptų CRUD su Supabase dar neprijungti (receptai kol kas saugomi `localStorage`).
 - Registracija ir prisijungimas dar neįgyvendinti.
-- Supabase duomenų bazė dar neprijungta.
