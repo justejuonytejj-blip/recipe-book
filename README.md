@@ -12,7 +12,7 @@ Tai internetinė aplikacija, kurioje vartotojai galės užsiregistruoti, prisiju
 - JavaScript
 - Vite
 - CSS
-- Supabase (Auth + prisijungusio vartotojo receptų skaitymas ir kūrimas)
+- Supabase (Auth + prisijungusio vartotojo receptų CRUD)
 - GitHub
 
 ## MVP funkcionalumai
@@ -23,8 +23,8 @@ Jau veikiančios funkcijos:
 - Receptų paieška pagal pavadinimą – filtruoja bendrą receptų sąrašą realiu laiku (nepriklausomai nuo raidžių dydžio, lietuviškų diakritikų ir dažnų žodžių formų; veikia ir su Supabase receptais).
 - Receptų pridėjimas – forma modaliniame lange; neprisijungus saugoma `localStorage`, prisijungus – tik Supabase (`public.recipes`).
 - Automatinis naujo recepto nuotraukos priskyrimas pagal pavadinimo raktažodžius (nuotraukos `public/recipes/`).
-- Vartotojo pridėtų receptų redagavimas – peržiūros lange mygtukas „Redaguoti“; pakeitimai saugomi `localStorage`.
-- Vartotojo pridėtų receptų ištrynimas – su patvirtinimo langu; pašalinimas iš sąrašo ir `localStorage`.
+- Vartotojo pridėtų receptų redagavimas – peržiūros lange mygtukas „Redaguoti“; `localStorage` receptams – lokaliai, savo Supabase receptams – `UPDATE` (pagal `user_id`).
+- Vartotojo pridėtų receptų ištrynimas – su patvirtinimo langu; `localStorage` arba savo Supabase receptų `DELETE` (pagal `user_id` + RLS).
 - Vartotojo registracija per Supabase Auth (el. paštas ir slaptažodis).
 - Vartotojo prisijungimas ir atsijungimas per Supabase Auth (sesija išlieka perkrovus puslapį).
 - Prisijungusio vartotojo receptų nuskaitymas iš Supabase (`public.recipes`) – rodomi tame pačiame bendrame sąraše su pavyzdiniais ir `localStorage` receptais.
@@ -32,7 +32,6 @@ Jau veikiančios funkcijos:
 
 Planuojamos funkcijos:
 
-- Receptų redagavimas ir trynimas Supabase duomenų bazėje.
 - Pilnas perėjimas nuo `localStorage` prie Supabase saugojimo.
 
 ## Kaip paleisti projektą
@@ -64,12 +63,12 @@ npm run dev
 - Įgyvendinta veikianti receptų paieška pagal pavadinimą (su lietuviškų raidžių, galūnių ir y/i variantų normalizavimu).
 - Įgyvendintas naujo recepto pridėjimas: neprisijungus – `localStorage`, prisijungus – Supabase CREATE.
 - Naujiems receptams automatiškai priskiriama nuotrauka pagal pavadinimo raktažodžius.
-- Įgyvendintas vartotojo pridėtų receptų redagavimas su `localStorage` saugojimu.
-- Įgyvendintas vartotojo pridėtų receptų ištrynimas su patvirtinimu ir `localStorage` atnaujinimu.
+- Įgyvendintas vartotojo pridėtų receptų redagavimas: `localStorage` ir savo Supabase receptai (`UPDATE`).
+- Įgyvendintas vartotojo pridėtų receptų ištrynimas: `localStorage` ir savo Supabase receptai (`DELETE`).
 - Supabase klientas (`@supabase/supabase-js`) paruoštas per `src/lib/supabase.js`.
 - Įgyvendinta vartotojo registracija per Supabase Auth.
 - Įgyvendintas prisijungimas ir atsijungimas per Supabase Auth.
 - Įgyvendintas prisijungusio vartotojo receptų skaitymas (READ) iš Supabase.
 - Įgyvendintas prisijungusio vartotojo receptų kūrimas (CREATE) Supabase.
 - Supabase receptai rodomi bendrame receptų sąraše (be atskiros skilties).
-- Redagavimas ir trynimas vis dar naudoja `localStorage` (Supabase UPDATE/DELETE dar neįgyvendinta).
+- Redaguoti / Ištrinti rodomi tik savo receptams (Supabase – pagal `user.id` ir `recipes.user_id`).

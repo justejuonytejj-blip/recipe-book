@@ -495,6 +495,7 @@ function toStorableImageUrl(image) {
 function mapSupabaseRecipe(row) {
   return {
     id: row.id,
+    user_id: row.user_id,
     title: row.title,
     tag: 'Mano receptas',
     image: row.image_url || RECIPE_IMAGES.default,
@@ -504,6 +505,24 @@ function mapSupabaseRecipe(row) {
     steps: parseStepLines(row.instructions || ''),
     source: 'supabase',
   }
+}
+
+/**
+ * Ar prisijungęs naudotojas gali redaguoti / ištrinti receptą.
+ * Supabase – pagal user_id; localStorage – pagal isUserRecipe.
+ */
+function canManageRecipe(recipe, currentUser) {
+  if (!recipe) return false
+
+  if (recipe.source === 'supabase') {
+    return Boolean(
+      currentUser?.id &&
+        recipe.user_id &&
+        String(recipe.user_id) === String(currentUser.id),
+    )
+  }
+
+  return Boolean(recipe.isUserRecipe)
 }
 
 /** Jungia receptų sąrašus be pasikartojančių id. */
@@ -588,7 +607,7 @@ function RecipeCards({ recipes, favorites, onToggleFavorite, onOpen }) {
   )
 }
 
-function RecipeModal({ recipe, onClose, onEdit, onDelete }) {
+function RecipeModal({ recipe, onClose, onEdit, onDelete, canManage = false }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
@@ -689,7 +708,7 @@ function RecipeModal({ recipe, onClose, onEdit, onDelete }) {
           </section>
 
           <div className="modal-actions">
-            {recipe.isUserRecipe && (
+            {canManage && (
               <>
                 <button
                   type="button"
@@ -1450,10 +1469,51 @@ function App() {
   }
 
   const handleSaveRecipe = async (recipe) => {
-    const isEdit = userRecipes.some((item) => item.id === recipe.id)
+    const isLocalEdit = userRecipes.some((item) => item.id === recipe.id)
+    const existingSupabase = supabaseRecipes.find(
+      (item) => String(item.id) === String(recipe.id),
+    )
+    const isSupabaseEdit = Boolean(existingSupabase)
+
+    // Savo Supabase recepto redagavimas (UPDATE).
+    if (isSupabaseEdit) {
+      if (!canManageRecipe(existingSupabase, user)) {
+        throw new Error('Neturite teisės redaguoti šio recepto.')
+      }
+
+      const { data, error } = await supabase
+        .from('recipes')
+        .update({
+          title: recipe.title,
+          ingredients: serializeIngredients(recipe.ingredients),
+          instructions: serializeSteps(recipe.steps),
+          image_url: toStorableImageUrl(recipe.image),
+        })
+        .eq('id', recipe.id)
+        .eq('user_id', user.id)
+        .select('*')
+        .single()
+
+      if (error || !data) {
+        throw new Error(
+          'Nepavyko atnaujinti recepto duomenų bazėje. Bandykite dar kartą.',
+        )
+      }
+
+      const mapped = mapSupabaseRecipe(data)
+      setSupabaseRecipes((prev) =>
+        prev.map((item) =>
+          String(item.id) === String(mapped.id) ? mapped : item,
+        ),
+      )
+      closeRecipeForm()
+      setSelectedRecipe(mapped)
+      setToastMessage('Receptas sėkmingai atnaujintas')
+      return
+    }
 
     // Prisijungus naują receptą saugome tik Supabase (be localStorage dubliavimo).
-    if (user?.id && !isEdit) {
+    if (user?.id && !isLocalEdit) {
       const { data, error } = await supabase
         .from('recipes')
         .insert({
@@ -1479,7 +1539,7 @@ function App() {
     }
 
     // Neprisijungusiems arba redaguojant localStorage receptus – kaip anksčiau.
-    const nextUserRecipes = isEdit
+    const nextUserRecipes = isLocalEdit
       ? userRecipes.map((item) => (item.id === recipe.id ? recipe : item))
       : [...userRecipes, recipe]
 
@@ -1487,14 +1547,47 @@ function App() {
     saveUserRecipes(nextUserRecipes)
     closeRecipeForm()
 
-    if (isEdit) {
+    if (isLocalEdit) {
       setSelectedRecipe(recipe)
     }
   }
 
-  const handleDeleteRecipe = (recipeId) => {
+  const handleDeleteRecipe = async (recipeId) => {
+    const existingSupabase = supabaseRecipes.find(
+      (item) => String(item.id) === String(recipeId),
+    )
+
+    if (existingSupabase) {
+      if (!canManageRecipe(existingSupabase, user)) {
+        setToastMessage('Neturite teisės ištrinti šio recepto.')
+        return
+      }
+
+      const { error } = await supabase
+        .from('recipes')
+        .delete()
+        .eq('id', recipeId)
+        .eq('user_id', user.id)
+
+      if (error) {
+        setToastMessage(
+          'Nepavyko ištrinti recepto iš duomenų bazės. Bandykite dar kartą.',
+        )
+        return
+      }
+
+      setSupabaseRecipes((prev) =>
+        prev.filter((item) => String(item.id) !== String(recipeId)),
+      )
+      setSelectedRecipe(null)
+      setToastMessage('Receptas sėkmingai ištrintas')
+      return
+    }
+
     setUserRecipes((prev) => {
-      const nextUserRecipes = prev.filter((item) => String(item.id) !== String(recipeId))
+      const nextUserRecipes = prev.filter(
+        (item) => String(item.id) !== String(recipeId),
+      )
       saveUserRecipes(nextUserRecipes)
       return nextUserRecipes
     })
@@ -1719,6 +1812,7 @@ function App() {
           onClose={() => setSelectedRecipe(null)}
           onEdit={handleEditRecipe}
           onDelete={handleDeleteRecipe}
+          canManage={canManageRecipe(selectedRecipe, user)}
         />
       )}
 
