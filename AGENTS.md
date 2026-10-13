@@ -1,14 +1,14 @@
 # Recipe Book – AI darbo taisyklės
 
 ## Projekto kontekstas
-„Recipe Book“ – asmeninis receptų katalogas, kuriame vartotojai galės užsiregistruoti, prisijungti ir saugoti bei valdyti tik savo receptus.
+„Recipe Book“ – asmeninis receptų katalogas, kuriame vartotojai gali užsiregistruoti, prisijungti ir saugoti bei valdyti tik savo receptus.
 
 ## Naudojamos technologijos
 - React
 - JavaScript (JSX)
 - Vite
 - CSS
-- Supabase (bus prijungta vėliau)
+- Supabase (Authentication ir PostgreSQL duomenų bazė)
 - GitHub
 
 ## Pagrindinės darbo taisyklės
@@ -32,19 +32,20 @@
 - Nekeisk esamo dizaino be aiškaus prašymo.
 
 ## MVP funkcionalumai
-- Registracija ir prisijungimas.
+- Registracija ir prisijungimas (Supabase Auth).
 - Receptų pridėjimas.
 - Receptų peržiūra.
 - Receptų redagavimas.
 - Receptų ištrynimas.
-- Receptų saugojimas Supabase duomenų bazėje.
-- Kiekvienas vartotojas matys tik savo receptus.
+- Prisijungusio vartotojo receptų saugojimas Supabase `public.recipes` lentelėje.
+- Kiekvienas prisijungęs vartotojas mato ir valdo tik savo receptus (RLS + `user_id`).
+- Neprisijungus receptai laikinai saugomi naršyklės `localStorage`.
 
 ## Saugumas
 - Vartotojas gali matyti ir valdyti tik savo receptus.
 - Nesaugok slaptažodžių, API raktų ar kitų slapų duomenų kode.
 - Supabase prisijungimo duomenis laikyk aplinkos kintamuosiuose (`.env`), o ne projekto faile, kuris keliauja į GitHub.
-- Neįgyvendink autentifikacijos ar duomenų bazės logikos anksčiau laiko, jei to neprašiau.
+- Nekeisk Supabase Auth, duomenų bazės ar RLS logikos be aiškaus prašymo.
 
 ## Darbo eiga
 1. Atlik tik vieną mažą užduotį.
