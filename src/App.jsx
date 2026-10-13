@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 
 const recipes = [
@@ -11,6 +11,27 @@ const recipes = [
     rating: 4.8,
     image:
       'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=800&q=80',
+    openable: true,
+    ingredients: [
+      { amount: '250 g', name: 'fetučini arba spagečių' },
+      { amount: '300 g', name: 'šviežių pievagrybių' },
+      { amount: '1 vnt.', name: 'svogūnas' },
+      { amount: '2 skiltelės', name: 'česnako' },
+      { amount: '200 ml', name: 'grietinėlės (20–30 %)' },
+      { amount: '40 g', name: 'sviesto' },
+      { amount: '50 g', name: 'parmezano' },
+      { amount: '2 v. š.', name: 'alyvuogių aliejaus' },
+      { amount: 'pagal skonį', name: 'druska, pipirai, šviežia petražolė' },
+    ],
+    steps: [
+      'Užvirinkite sūrų vandenį ir išvirkite makaronus pagal pakuotės nurodymus iki „al dente“. Prieš nupildami, atidėkite apie 100 ml virimo vandens.',
+      'Kol makaronai verda, grybus nuplaukite, nusausinkite ir supjaustykite plonais griežinėliais. Svogūną smulkiai sukapokite, česnaką – plonais griežinėliais.',
+      'Keptuvėje įkaitinkite alyvuogių aliejų su sviestu. Suberkite svogūną ir kepkite 2–3 min., kol jis taps skaidrus.',
+      'Įdėkite grybus ir kepkite vidutine ugnimi 6–8 min., kol jie apskrus ir išgarins skysčius. Įberkite česnaką ir kepkite dar 1 minutę.',
+      'Įpilkite grietinėlę, sumažinkite ugnį ir troškinkite 3–4 min., kol padažas šiek tiek sutirštės. Pagardinkite druska ir juodaisiais pipirais.',
+      'Į keptuvę sudėkite nupiltus makaronus, suberkite tarkuotą parmezaną ir, jei reikia, įpilkite šiek tiek atidėto virimo vandens. Maišykite, kol padažas apgaubs makaronus.',
+      'Patiekite iškart, pabarstę smulkinta petražole ir papildomu parmezanu.',
+    ],
   },
   {
     id: 2,
@@ -187,10 +208,101 @@ function Stars({ rating }) {
   )
 }
 
+function RecipeModal({ recipe, onClose }) {
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [onClose])
+
+  return (
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recipe-modal-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="modal-close-icon"
+          aria-label="Uždaryti"
+          onClick={onClose}
+        >
+          <Icon name="close" />
+        </button>
+
+        <div className="modal-image">
+          <img src={recipe.image} alt={recipe.title} />
+        </div>
+
+        <div className="modal-body">
+          <span className="tag">{recipe.tag}</span>
+          <h2 id="recipe-modal-title">{recipe.title}</h2>
+
+          <div className="modal-meta">
+            <span>
+              <Icon name="clock" />
+              {recipe.time}
+            </span>
+            <span>
+              <Icon name="user" />
+              {recipe.servings} porcijos
+            </span>
+          </div>
+
+          <section className="modal-section">
+            <h3>Ingredientai</h3>
+            <ul className="ingredient-list">
+              {recipe.ingredients.map((item) => (
+                <li key={`${item.amount}-${item.name}`}>
+                  <span className="ingredient-amount">{item.amount}</span>
+                  <span>{item.name}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="modal-section">
+            <h3>Gaminimo instrukcija</h3>
+            <ol className="steps-list">
+              {recipe.steps.map((step, index) => (
+                <li key={step}>
+                  <span className="step-number">{index + 1}</span>
+                  <p>{step}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <button type="button" className="btn btn-primary modal-close-btn" onClick={onClose}>
+            Uždaryti
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [favorites, setFavorites] = useState(new Set())
   const [query, setQuery] = useState('')
+  const [selectedRecipe, setSelectedRecipe] = useState(null)
 
   const toggleFavorite = (id) => {
     setFavorites((prev) => {
@@ -199,6 +311,11 @@ function App() {
       else next.add(id)
       return next
     })
+  }
+
+  const openRecipe = (recipe) => {
+    if (!recipe.openable) return
+    setSelectedRecipe(recipe)
   }
 
   return (
@@ -321,8 +438,23 @@ function App() {
               {recipes.map((recipe, index) => (
                 <article
                   key={recipe.id}
-                  className="recipe-card"
+                  className={`recipe-card${recipe.openable ? ' is-openable' : ''}`}
                   style={{ animationDelay: `${index * 80}ms` }}
+                  onClick={() => openRecipe(recipe)}
+                  onKeyDown={(event) => {
+                    if (!recipe.openable) return
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      openRecipe(recipe)
+                    }
+                  }}
+                  role={recipe.openable ? 'button' : undefined}
+                  tabIndex={recipe.openable ? 0 : undefined}
+                  aria-label={
+                    recipe.openable
+                      ? `Atidaryti receptą: ${recipe.title}`
+                      : undefined
+                  }
                 >
                   <div className="recipe-image">
                     <img src={recipe.image} alt={recipe.title} loading="lazy" />
@@ -334,7 +466,10 @@ function App() {
                           ? 'Pašalinti iš mėgstamų'
                           : 'Pridėti prie mėgstamų'
                       }
-                      onClick={() => toggleFavorite(recipe.id)}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        toggleFavorite(recipe.id)
+                      }}
                     >
                       <Icon name="heart" />
                     </button>
@@ -420,6 +555,13 @@ function App() {
           <span>Profilis</span>
         </a>
       </nav>
+
+      {selectedRecipe && (
+        <RecipeModal
+          recipe={selectedRecipe}
+          onClose={() => setSelectedRecipe(null)}
+        />
+      )}
     </div>
   )
 }

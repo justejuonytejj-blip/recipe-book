@@ -17,11 +17,15 @@ Tai internetinė aplikacija, kurioje vartotojai galės užsiregistruoti, prisiju
 
 ## MVP funkcionalumai
 
+Jau veikiančios funkcijos:
+
+- Receptų peržiūra – paspaudus ant „Kreminiai makaronai su grybais“ kortelės atsidaro modalinis recepto langas su ingredientais ir gaminimo instrukcija (vietiniai pavyzdiniai duomenys).
+
 Planuojamos funkcijos:
 
 - Registracija ir prisijungimas.
 - Receptų pridėjimas.
-- Receptų peržiūra.
+- Kitų receptų peržiūra.
 - Receptų redagavimas.
 - Receptų ištrynimas.
 - Receptų saugojimas Supabase duomenų bazėje.
@@ -47,6 +51,7 @@ npm run dev
 
 - Sukurtas React + Vite projektas.
 - Sukurtas pradinis „Recipe Book“ svetainės dizainas.
+- Įgyvendinta vieno pavyzdinio recepto („Kreminiai makaronai su grybais“) peržiūra modaliniame lange.
 - Registracija ir prisijungimas dar neįgyvendinti.
 - Supabase duomenų bazė dar neprijungta.
-- Receptų CRUD funkcijos dar neįgyvendintos.
+- Receptų pridėjimas, redagavimas ir ištrynimas dar neįgyvendinti.
