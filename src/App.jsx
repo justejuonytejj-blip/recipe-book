@@ -383,11 +383,6 @@ function Icon({ name }) {
         <path d="M12 5v14M5 12h14" strokeLinecap="round" />
       </svg>
     ),
-    heart: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
-      </svg>
-    ),
     clock: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <circle cx="12" cy="12" r="8" />
@@ -520,7 +515,7 @@ function canManageRecipe(recipe, currentUser) {
   return Boolean(recipe.isUserRecipe)
 }
 
-function RecipeCards({ recipes, favorites, onToggleFavorite, onOpen }) {
+function RecipeCards({ recipes, onOpen }) {
   return (
     <div className="recipe-grid">
       {recipes.map((recipe, index) => (
@@ -544,21 +539,6 @@ function RecipeCards({ recipes, favorites, onToggleFavorite, onOpen }) {
         >
           <div className="recipe-image">
             <img src={recipe.image} alt={recipe.title} loading="lazy" />
-            <button
-              type="button"
-              className={`fav-btn ${favorites.has(recipe.id) ? 'is-active' : ''}`}
-              aria-label={
-                favorites.has(recipe.id)
-                  ? 'Pašalinti iš mėgstamų'
-                  : 'Pridėti prie mėgstamų'
-              }
-              onClick={(event) => {
-                event.stopPropagation()
-                onToggleFavorite(recipe.id)
-              }}
-            >
-              <Icon name="heart" />
-            </button>
           </div>
           <div className="recipe-body">
             {recipe.tag && <span className="tag">{recipe.tag}</span>}
@@ -1297,7 +1277,6 @@ function LoginModal({ onClose, onSuccessToast }) {
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activePage, setActivePage] = useState('home')
-  const [favorites, setFavorites] = useState(new Set())
   const [query, setQuery] = useState('')
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
@@ -1433,15 +1412,6 @@ function App() {
     } finally {
       setIsLoggingOut(false)
     }
-  }
-
-  const toggleFavorite = (id) => {
-    setFavorites((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
   }
 
   const openRecipe = (recipe) => {
@@ -1782,8 +1752,6 @@ function App() {
 
                 <RecipeCards
                   recipes={SAMPLE_RECIPES}
-                  favorites={favorites}
-                  onToggleFavorite={toggleFavorite}
                   onOpen={openRecipe}
                 />
               </div>
@@ -1892,8 +1860,6 @@ function App() {
                 filteredSupabaseRecipes.length > 0 && (
                   <RecipeCards
                     recipes={filteredSupabaseRecipes}
-                    favorites={favorites}
-                    onToggleFavorite={toggleFavorite}
                     onOpen={openRecipe}
                   />
                 )}
@@ -1914,8 +1880,6 @@ function App() {
                   ) : (
                     <RecipeCards
                       recipes={filteredLocalRecipes}
-                      favorites={favorites}
-                      onToggleFavorite={toggleFavorite}
                       onOpen={openRecipe}
                     />
                   )}

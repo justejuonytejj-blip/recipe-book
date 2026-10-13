@@ -434,38 +434,6 @@
   transform: scale(1.04);
 }
 
-.fav-btn {
-  position: absolute;
-  top: 0.85rem;
-  right: 0.85rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  color: var(--white);
-  background: rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(6px);
-  border-radius: 50%;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
-}
-
-.fav-btn:hover {
-  background: rgba(255, 255, 255, 0.4);
-}
-
-.fav-btn.is-active {
-  color: #e85d5d;
-  background: rgba(255, 255, 255, 0.92);
-}
-
-.fav-btn.is-active .icon svg {
-  fill: currentColor;
-}
-
 .recipe-body {
   padding: 1.1rem 1.2rem 1.3rem;
 }
