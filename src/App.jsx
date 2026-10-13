@@ -97,6 +97,99 @@ const navLinks = [
   { href: '#receptai', label: 'Mano receptai' },
 ]
 
+const LT_CHAR_MAP = {
+  ą: 'a',
+  č: 'c',
+  ę: 'e',
+  ė: 'e',
+  į: 'i',
+  š: 's',
+  ų: 'u',
+  ū: 'u',
+  ž: 'z',
+}
+
+/** Pašalina diakritikus, suvienodina y/i ir mažąsias raides. */
+function normalizeSearchText(text) {
+  return text
+    .toLocaleLowerCase('lt')
+    .split('')
+    .map((char) => LT_CHAR_MAP[char] || char)
+    .join('')
+    .replace(/y/g, 'i')
+}
+
+/**
+ * Supaprastina lietuviškas galūnes, kad „makaronai / makaronų / makaronus“
+ * ir „avokadas / avokado / avokadu“ atitiktų tą patį kamieną.
+ */
+function stemSearchWord(word) {
+  const endings = [
+    'ais',
+    'ams',
+    'ami',
+    'oje',
+    'ose',
+    'ius',
+    'iam',
+    'iems',
+    'us',
+    'as',
+    'is',
+    'ys',
+    'ai',
+    'ui',
+    'uo',
+    'om',
+    'os',
+    'es',
+    'ei',
+    'a',
+    'o',
+    'u',
+    'e',
+    'i',
+  ]
+
+  let stem = word
+  for (const ending of endings) {
+    if (stem.length - ending.length >= 4 && stem.endsWith(ending)) {
+      stem = stem.slice(0, -ending.length)
+      break
+    }
+  }
+  return stem
+}
+
+function getSearchTokens(text) {
+  return normalizeSearchText(text)
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .map(stemSearchWord)
+}
+
+/** Filtruoja bet kurį receptų sąrašą pagal pavadinimą (veiks ir su Supabase duomenimis). */
+function filterRecipesByTitle(recipeList, searchQuery) {
+  const normalizedQuery = normalizeSearchText(searchQuery.trim())
+  if (!normalizedQuery) return recipeList
+
+  const queryTokens = getSearchTokens(searchQuery)
+  if (queryTokens.length === 0) return recipeList
+
+  return recipeList.filter((recipe) => {
+    const normalizedTitle = normalizeSearchText(recipe.title)
+    if (normalizedTitle.includes(normalizedQuery)) return true
+
+    const titleTokens = getSearchTokens(recipe.title)
+    return queryTokens.every((queryToken) =>
+      titleTokens.some(
+        (titleToken) =>
+          titleToken.includes(queryToken) || queryToken.includes(titleToken),
+      ),
+    )
+  })
+}
+
 function LeafLogo() {
   return (
     <svg
@@ -311,6 +404,8 @@ function App() {
     setSelectedRecipe(recipe)
   }
 
+  const filteredRecipes = filterRecipesByTitle(recipes, query)
+
   return (
     <div className="page">
       <header className="header">
@@ -427,64 +522,70 @@ function App() {
               </a>
             </div>
 
-            <div className="recipe-grid">
-              {recipes.map((recipe, index) => (
-                <article
-                  key={recipe.id}
-                  className={`recipe-card${recipe.openable ? ' is-openable' : ''}`}
-                  style={{ animationDelay: `${index * 80}ms` }}
-                  onClick={() => openRecipe(recipe)}
-                  onKeyDown={(event) => {
-                    if (!recipe.openable) return
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault()
-                      openRecipe(recipe)
-                    }
-                  }}
-                  role={recipe.openable ? 'button' : undefined}
-                  tabIndex={recipe.openable ? 0 : undefined}
-                  aria-label={
-                    recipe.openable
-                      ? `Atidaryti receptą: ${recipe.title}`
-                      : undefined
-                  }
-                >
-                  <div className="recipe-image">
-                    <img src={recipe.image} alt={recipe.title} loading="lazy" />
-                    <button
-                      type="button"
-                      className={`fav-btn ${favorites.has(recipe.id) ? 'is-active' : ''}`}
-                      aria-label={
-                        favorites.has(recipe.id)
-                          ? 'Pašalinti iš mėgstamų'
-                          : 'Pridėti prie mėgstamų'
+            {filteredRecipes.length === 0 ? (
+              <p className="recipes-empty" role="status">
+                Receptų nerasta
+              </p>
+            ) : (
+              <div className="recipe-grid">
+                {filteredRecipes.map((recipe, index) => (
+                  <article
+                    key={recipe.id}
+                    className={`recipe-card${recipe.openable ? ' is-openable' : ''}`}
+                    style={{ animationDelay: `${index * 80}ms` }}
+                    onClick={() => openRecipe(recipe)}
+                    onKeyDown={(event) => {
+                      if (!recipe.openable) return
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        openRecipe(recipe)
                       }
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        toggleFavorite(recipe.id)
-                      }}
-                    >
-                      <Icon name="heart" />
-                    </button>
-                  </div>
-                  <div className="recipe-body">
-                    <span className="tag">{recipe.tag}</span>
-                    <h3>{recipe.title}</h3>
-                    <div className="recipe-meta">
-                      <span>
-                        <Icon name="clock" />
-                        {recipe.time}
-                      </span>
-                      <span>
-                        <Icon name="user" />
-                        {recipe.servings}
-                      </span>
-                      <Stars rating={recipe.rating} />
+                    }}
+                    role={recipe.openable ? 'button' : undefined}
+                    tabIndex={recipe.openable ? 0 : undefined}
+                    aria-label={
+                      recipe.openable
+                        ? `Atidaryti receptą: ${recipe.title}`
+                        : undefined
+                    }
+                  >
+                    <div className="recipe-image">
+                      <img src={recipe.image} alt={recipe.title} loading="lazy" />
+                      <button
+                        type="button"
+                        className={`fav-btn ${favorites.has(recipe.id) ? 'is-active' : ''}`}
+                        aria-label={
+                          favorites.has(recipe.id)
+                            ? 'Pašalinti iš mėgstamų'
+                            : 'Pridėti prie mėgstamų'
+                        }
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          toggleFavorite(recipe.id)
+                        }}
+                      >
+                        <Icon name="heart" />
+                      </button>
                     </div>
-                  </div>
-                </article>
-              ))}
-            </div>
+                    <div className="recipe-body">
+                      <span className="tag">{recipe.tag}</span>
+                      <h3>{recipe.title}</h3>
+                      <div className="recipe-meta">
+                        <span>
+                          <Icon name="clock" />
+                          {recipe.time}
+                        </span>
+                        <span>
+                          <Icon name="user" />
+                          {recipe.servings}
+                        </span>
+                        <Stars rating={recipe.rating} />
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </main>
